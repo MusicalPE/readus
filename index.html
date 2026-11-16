@@ -131,7 +131,7 @@ table.t td,table.t th{padding:8px 6px;border-bottom:1px solid var(--line);text-a
 <script>
 'use strict';
 var TEMPLATE_URL = 'https://docs.google.com/spreadsheets/d/1i-lr4aewTmhj4eJ-hfXgjxaPzflmMyLMn-aqUepZjls/copy';   // 껍데기가 들어 있는 견본 시트 (사본 만들기)
-var APP = { version: '0.2.3', requiredShell: 1, s: '', ping: null, settings: null, relay: '', token: '', me: null };
+var APP = { version: '0.2.4', requiredShell: 1, s: '', ping: null, settings: null, relay: '', token: '', me: null };
 
 /* ---------- 작은 도구 ---------- */
 function $(sel, root) { return (root || document).querySelector(sel); }
@@ -146,6 +146,8 @@ function dueText(due) {
   var base = p[1] + '월 ' + p[2] + '일(' + day + ')까지';
   return left > 0 ? base + ' · ' + left + '일 남음' : left === 0 ? base + ' · 오늘까지' : base;
 }
+// 견본 시트의 사본은 이름 끝에 '의 사본'이 붙으므로 화면에서는 떼고 보여 줌
+function classTitle(t) { return String(t || '').replace(/\s*의 사본(\s*\(\d+\))?\s*$/, '').replace(/^Copy of\s+/i, '').trim(); }
 function heightText(count, cm) {
   var m = count * cm / 100;
   if (m >= 1000) return (Math.round(m / 10) / 100) + 'km';
@@ -317,7 +319,7 @@ VIEWS.home = async function () {
   app.innerHTML = '<p class="muted">우리 반 책탑을 불러오는 중이에요.</p>';
   var d = await guard(function () { return rpc('getBoard'); });
   if (!d) { app.innerHTML = '<div class="card"><p>학교 시트와 연결하지 못했어요.</p><button class="btn" type="button" id="again">다시 시도</button></div>'; $('#again').onclick = render; return; }
-  $('#cls').textContent = d.title || '';
+  $('#cls').textContent = classTitle(d.title);
   var m = d.total * d.bookCm / 100, gi = goalFor(m), goal = GOALS[gi], fill = Math.min(1, m / goal.m);
   var left = Math.max(0, Math.ceil(goal.m * 100 / d.bookCm) - d.total);
   var marks = '<div class="goal" style="top:0"><strong>' + esc(goal.name) + ' · ' + heightText(goal.m * 100 / d.bookCm, d.bookCm) + '</strong><span>다음 목표</span></div>';
@@ -648,7 +650,7 @@ async function start() {
     APP.ping = got[0]; APP.settings = got[1];
   } catch (e) { connectScreen('학교 시트와 연결하지 못했어요. 주소를 다시 확인해 주세요. (' + (e.message || e) + ')'); return; }
   try { localStorage.setItem('ru_shell', s); APP.token = sessionStorage.getItem('ru_token|' + s) || ''; } catch (e) {}
-  $('#cls').textContent = APP.ping.title || '';
+  $('#cls').textContent = classTitle(APP.ping.title);
   if (APP.ping.shell < APP.requiredShell) toast('껍데기를 새 판으로 바꿔야 해요. 선생님께 알려 주세요.');
   try { var rj = await (await fetch('relay.json', { cache: 'no-cache' })).json(); if (/^https?:\/\//.test(rj.relay || '')) APP.relay = rj.relay; } catch (e) {}
   render();

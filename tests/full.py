@@ -66,6 +66,10 @@ try:
         pg.fill('#cd', '2099-12-31'); pg.click('#cbf button[type=submit]'); pg.wait_for_selector('#cbl .cb')
         ok('학급 도서 등록', '3명 중' in pg.inner_text('#cbl') and '아직 안 읽은 친구 3명' in pg.inner_text('#cbl'))
         ok('표지 그림 주소 저장', state()['ClassBooks'][1][5] == 'https://example.com/cover.jpg')
+        pg.locator('#cbl .cvbtn').first.click(); pg.wait_for_selector('#cvi')
+        ok('표지를 누르면 크게 보기', '알사탕' in pg.inner_text('.qrbox') and pg.get_attribute('#cvi', 'alt') == '알사탕 표지')
+        ok('큰 그림 주소 만들기', pg.evaluate("bigCover('https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Fa')") == 'https://search1.kakaocdn.net/thumb/R480x696.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Fa' and pg.evaluate("bigCover('https://example.com/cover.jpg')") == 'https://example.com/cover.jpg')
+        pg.click('#cvx'); ok('크게 보기 닫기', pg.locator('.shade').count() == 0)
 
         # 5. 학생 기록 — 감상 기준 안내 (막지 않음)
         pg.click('[data-go=home]'); pg.wait_for_selector('h1.headline'); pg.click('[data-go=student]'); pg.wait_for_selector('.name')

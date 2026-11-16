@@ -59,7 +59,12 @@ textarea.in{min-height:96px;resize:vertical;line-height:1.5}
 .bar{height:12px;border-radius:6px;background:var(--soft);overflow:hidden}
 .bar i{display:block;height:100%;border-radius:6px;background:var(--sage)}
 .cover{flex:0 0 60px;width:60px;height:84px;border-radius:4px 8px 8px 4px;display:flex;align-items:center;justify-content:center;text-align:center;font-family:Jua,sans-serif;font-size:12px;line-height:1.2;padding:4px;overflow:hidden;color:var(--ink);border-left:6px solid rgba(62,44,32,.25)}
-img.cover{object-fit:cover;padding:0;border-left:0}
+img.cover{object-fit:cover;padding:0;border-left:0;display:block}
+.cvbtn{flex:0 0 60px;align-self:flex-start;padding:0;border:0;background:none;border-radius:4px 8px 8px 4px;cursor:zoom-in;transition:transform .08s ease,box-shadow .12s ease}
+.cvbtn:hover{transform:translateY(-2px);box-shadow:0 5px 14px rgba(62,44,32,.28)}
+.cvbtn:active{transform:translateY(1px) scale(.98);box-shadow:none}
+.cvbtn:focus-visible{outline:3px solid var(--mustard);outline-offset:2px}
+.cvbig{width:auto;height:min(62vh,520px);max-width:78vw;object-fit:contain;border-radius:6px 12px 12px 6px;box-shadow:0 8px 24px rgba(62,44,32,.3);background:var(--soft)}
 .cb{display:flex;gap:14px}
 .cb .b{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
 /* 현황판 */
@@ -173,7 +178,7 @@ table.t td,table.t th{padding:8px 6px;border-bottom:1px solid var(--line);text-a
 <script>
 'use strict';
 var TEMPLATE_URL = 'https://docs.google.com/spreadsheets/d/1i-lr4aewTmhj4eJ-hfXgjxaPzflmMyLMn-aqUepZjls/copy';   // 껍데기가 들어 있는 견본 시트 (사본 만들기)
-var APP = { version: '0.6.1', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
+var APP = { version: '0.7.0', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
 
 /* ---------- 작은 도구 ---------- */
 function $(sel, root) { return (root || document).querySelector(sel); }
@@ -365,10 +370,25 @@ function goalFor(m) { for (var i = 0; i < GOALS.length; i++) if (m < GOALS[i].m)
 
 /* ---------- 표지 ---------- */
 function coverHtml(b) {
-  if (b.cover) return '<img class="cover" src="' + esc(b.cover) + '" alt="" loading="lazy" referrerpolicy="no-referrer">';
+  if (b.cover) return '<button class="cvbtn" type="button" data-cv="' + esc(b.cover) + '" data-cvt="' + esc(b.title) + '" data-cvm="' + esc([b.author, b.publisher].filter(Boolean).join(' · ')) + '" aria-label="' + esc(b.title) + ' 표지 크게 보기"><img class="cover" src="' + esc(b.cover) + '" alt="" loading="lazy" referrerpolicy="no-referrer"></button>';
   var n = 0, t = String(b.title || ''); for (var i = 0; i < t.length; i++) n = (n * 31 + t.charCodeAt(i)) >>> 0;
   return '<div class="cover" style="background:' + BOOKC[n % (BOOKC.length - 1)] + '" aria-hidden="true">' + esc(t.slice(0, 12)) + '</div>';
 }
+// 표지를 누르면 크게 보기. 책 검색이 준 작은 그림 주소(R120x174)를 큰 크기로 바꿔 불러 보고, 안 되면 작은 그림을 키워서 보여 줌
+function bigCover(u) { return String(u).replace(/\/thumb\/R\d+x\d+(\.q\d+)?\//, '/thumb/R480x696.q85/'); }
+function showCover(src, title, meta) {
+  $('#modal').innerHTML = '<div class="shade mid" id="cvs"><div class="qrbox" role="dialog" aria-label="' + esc(title) + ' 표지"><img class="cvbig" id="cvi" alt="' + esc(title) + ' 표지" referrerpolicy="no-referrer"><strong style="font-size:18px">' + esc(title) + '</strong>' + (meta ? '<span class="muted">' + esc(meta) + '</span>' : '') + '<button class="btn" type="button" id="cvx">닫기</button></div></div>';
+  var img = $('#cvi'), big = bigCover(src);
+  img.onerror = function () { if (img.getAttribute('src') !== src) img.src = src; };
+  img.src = big;
+  $('#cvx').onclick = function () { $('#modal').innerHTML = ''; };
+  $('#cvs').onclick = function (ev) { if (ev.target === ev.currentTarget) $('#modal').innerHTML = ''; };
+  $('#cvx').focus();
+}
+document.addEventListener('click', function (ev) {
+  var b = ev.target.closest('[data-cv]');
+  if (b) { ev.preventDefault(); showCover(b.getAttribute('data-cv'), b.getAttribute('data-cvt'), b.getAttribute('data-cvm')); }
+});
 function classBookCard(c, extra, cls) {
   var pct = c.total ? Math.round(c.read / c.total * 100) : 0, due = dueText(c.due);
   return '<div class="' + (cls || 'card') + ' cb">' + coverHtml(c) + '<div class="b"><strong>' + esc(c.title) + '</strong>' +

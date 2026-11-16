@@ -178,7 +178,7 @@ table.t td,table.t th{padding:8px 6px;border-bottom:1px solid var(--line);text-a
 <script>
 'use strict';
 var TEMPLATE_URL = 'https://docs.google.com/spreadsheets/d/1i-lr4aewTmhj4eJ-hfXgjxaPzflmMyLMn-aqUepZjls/copy';   // 껍데기가 들어 있는 견본 시트 (사본 만들기)
-var APP = { version: '0.8.0', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
+var APP = { version: '0.9.0', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
 
 /* ---------- 작은 도구 ---------- */
 function $(sel, root) { return (root || document).querySelector(sel); }
@@ -266,68 +266,29 @@ function showQr() {
 
 /* ---------- 책탑 그림 ---------- */
 var BOOKC = ['#D2604A', '#E39A4A', '#E8B84E', '#5E9C8A', '#7E9BB8', '#B8566B', '#F2E6D0'];
-var PAGE = '#FFF8EA', SHADE = '#D8CCB2', INK = '#3E2C20', CREAM = '#FFFCF6';
-function mix(c, t, k) {
-  var a = [1, 3, 5].map(function (i) { return parseInt(c.slice(i, i + 2), 16); }), b = [1, 3, 5].map(function (i) { return parseInt(t.slice(i, i + 2), 16); });
-  return '#' + a.map(function (v, i) { return Math.round(v * (1 - k) + b[i] * k).toString(16).padStart(2, '0'); }).join('');
-}
 function rng(seed) { var a = seed >>> 0; return function () { a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
-function pick(r, arr) { return arr[Math.floor(r() * arr.length)]; }
-function inkOn(c) { return (c === '#D2604A' || c === '#B8566B') ? CREAM : INK; }
-// fill: 0~1 (다음 목표까지 얼마나 찼는지), titles: 책등에 적을 제목들(최근 승인된 책)
-function towerSvg(fill, titles, exact) {
-  var W = 190, H = 500, fillPx = Math.max(0, Math.min(1, fill)) * H, r = rng(23), r2 = rng(5);
-  var hs = [], sum = 0;
-  while (fillPx - sum >= 14) { var hh = Math.min(pick(r, [16, 18, 20, 22, 26]), fillPx - sum); if (fillPx - sum - hh < 14 && fillPx - sum <= 30) hh = fillPx - sum; hs.push(hh); sum += hh; }
-  if (exact) { hs = []; for (var e = 0; e < exact; e++) hs.push(fillPx / exact); }   // 한 권이 그림 한 권 (제목도 실제 순서대로)
-  if (!hs.length && fillPx > 0) hs.push(Math.max(8, fillPx));
-  var out = ['<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="우리 반 책탑" data-n="' + hs.length + '"><line x1="0" y1="1" x2="' + W + '" y2="1" stroke="#E8B84E" stroke-width="2" stroke-dasharray="6 5"/>'];
-  function lines(a, b) { var o = [], t = a + 1.4; while (t < b - 0.8) { o.push(t); t += pick(r2, [1.8, 2.2, 2.6]); } return o; }
-  var y = H, prevC = '', prevO = '', ti = 0, k = 0;
-  hs.forEach(function (h) {
-    y -= h;
-    var o = pick(r, 'SNEW'.split('').filter(function (x) { return x !== prevO; }).concat(['S'])); prevO = o;
-    var c = pick(r, BOOKC.filter(function (x) { return x !== prevC; })); prevC = c;
-    var wide = (o === 'S' || o === 'N'), w = pick(r, wide ? [108, 116, 124, 130] : [70, 76, 84]), dx = wide ? 16 : 34, dy = wide ? -8 : -17;
-    var x = Math.round((W - (w + dx)) / 2 + Math.floor(r() * 17) - 8), top = mix(c, '#FFFFFF', 0.35), cd = mix(c, INK, 0.14), CV = Math.min(3, h / 4);
-    function side(t0, t1, a, b, f) { var X = function (t) { return (x + w + dx * t).toFixed(1); }, Y = function (t, off) { return (y + dy * t + off).toFixed(1); }; return '<polygon points="' + X(t0) + ',' + Y(t0, a) + ' ' + X(t1) + ',' + Y(t1, a) + ' ' + X(t1) + ',' + Y(t1, b) + ' ' + X(t0) + ',' + Y(t0, b) + '" fill="' + f + '"/>'; }
-    out.push('<polygon points="' + x + ',' + y + ' ' + (x + w) + ',' + y + ' ' + (x + w + dx) + ',' + (y + dy) + ' ' + (x + dx) + ',' + (y + dy) + '" fill="' + top + '"/>');
-    var title = titles.length ? String(titles[ti % titles.length] || '') : '';
-    if (o === 'E') {
-      out.push(side(0, 1, 0, h, cd));
-      var st = title.replace(/\s/g, '').slice(0, 3);
-      if (st && h >= 12) { ti++; var fs = Math.min(8.5, h - 5, (dx - 5) / st.length - 1), adv = fs + 1, cu = (dx - st.length * adv) / 2 + adv / 2;
-        out.push('<g transform="matrix(1 ' + (dy / dx).toFixed(3) + ' 0 1 ' + (x + w) + ' ' + y + ')" font-family="Jua,sans-serif" font-size="' + fs.toFixed(1) + '" fill="' + inkOn(c) + '" text-anchor="middle" dominant-baseline="central" aria-hidden="true">');
-        st.split('').forEach(function (ch) { out.push('<text x="' + cu.toFixed(1) + '" y="' + (h / 2).toFixed(1) + '" transform="rotate(-90 ' + cu.toFixed(1) + ' ' + (h / 2).toFixed(1) + ')">' + esc(ch) + '</text>'); cu += adv; });
-        out.push('</g>'); }
-    } else {
-      var t0 = o === 'S' ? 0 : 0.08;
-      out.push(side(0, 1, 0, h, SHADE) + side(t0, 0.92, CV, h - CV, PAGE));
-      out.push('<path d="' + lines(y + CV, y + h - CV).map(function (yy) { return 'M' + (x + w + dx * t0).toFixed(1) + ' ' + (yy + dy * t0).toFixed(1) + 'L' + (x + w + dx * 0.92).toFixed(1) + ' ' + (yy + dy * 0.92).toFixed(1); }).join('') + '" stroke="#8A7A5C" stroke-opacity=".35" stroke-width=".6" fill="none"/>');
-      out.push(side(0, 1, 0, CV, cd) + side(0, 1, h - CV, h, cd));
-    }
-    if (o === 'S') {
-      out.push('<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="2" fill="' + c + '"/>');
-      var flip = (k % 4 === 3); k++;
-      out.push('<rect x="' + (flip ? x + w - 10.5 : x + 8) + '" y="' + y + '" width="2.5" height="' + h + '" fill="' + inkOn(c) + '" opacity=".35"/>');
-      var maxCh = Math.floor((w - 34) / 8), tt = title.length > maxCh ? title.slice(0, maxCh) : title;
-      if (tt && h >= 12) { ti++;
-        var units = tt.split('').reduce(function (a, ch) { return a + (ch === ' ' ? 0.45 : 1); }, 0), fs2 = Math.min(12, h - 5, (w - 34) / units - 1), adv2 = fs2 + 1, cy = y + h / 2, cx = flip ? x + w - 20 - fs2 : x + 20;
-        out.push('<g font-family="Jua,sans-serif" font-size="' + fs2.toFixed(1) + '" fill="' + inkOn(c) + '" text-anchor="middle" dominant-baseline="central" aria-hidden="true">');
-        tt.split('').forEach(function (ch) {
-          if (ch === ' ') { cx += (flip ? -1 : 1) * adv2 * 0.45; return; }
-          var px = (cx + fs2 / 2).toFixed(1);
-          out.push('<text x="' + px + '" y="' + cy.toFixed(1) + '" transform="rotate(' + (flip ? 90 : -90) + ' ' + px + ' ' + cy.toFixed(1) + ')">' + esc(ch) + '</text>'); cx += (flip ? -1 : 1) * adv2;
-        });
-        out.push('</g>'); }
-    } else {
-      var l = x + (o === 'W' ? 5 : 4), rr = x + w - (o === 'E' ? 5 : 4);
-      out.push('<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="' + SHADE + '"/><rect x="' + l + '" y="' + (y + CV) + '" width="' + (rr - l) + '" height="' + (h - 2 * CV) + '" fill="' + PAGE + '"/>');
-      out.push('<path d="' + lines(y + CV, y + h - CV).map(function (yy) { return 'M' + l + ' ' + yy.toFixed(1) + 'H' + rr; }).join('') + '" stroke="#8A7A5C" stroke-opacity=".35" stroke-width=".6" fill="none"/>');
-      out.push('<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + CV + '" fill="' + c + '"/><rect x="' + x + '" y="' + (y + h - CV) + '" width="' + w + '" height="' + CV + '" fill="' + c + '"/>');
-      if (o === 'W') out.push('<rect x="' + x + '" y="' + y + '" width="5" height="' + h + '" fill="' + c + '"/>');
-      if (o === 'E') out.push('<rect x="' + (x + w - 5) + '" y="' + y + '" width="5" height="' + h + '" fill="' + c + '"/>');
-    }
+// fill: 0~1 (다음 목표까지 얼마나 찼는지), exact: 책이 적을 때 실제 권수(한 권이 그림 한 권)
+// 책 그림 12권(img/books/b01~b12.webp) — [앞면이 시작되는 높이 비율, 앞면이 끝나는 높이 비율, 앞면 두께÷너비]
+var BOOKS = [[0.175,1.0,0.1444],[0.33,0.968,0.0877],[0.35,0.994,0.0648],[0.213,0.996,0.1293],[0.153,0.721,0.133],[0.215,0.985,0.1275],[0.347,0.994,0.0704],[0.234,0.996,0.1164],[0.188,0.984,0.1517],[0.296,0.994,0.0774],[0.181,1.0,0.1508],[0.167,0.996,0.1452]];
+function towerSvg(fill, exact) {
+  var W = 210, H = 500, fillPx = Math.max(0, Math.min(1, fill)) * H, r = rng(23);
+  var list = [], sum = 0, p1 = -1, p2 = -1;
+  function next() { var i; do { i = Math.floor(r() * BOOKS.length); } while (i === p1 || i === p2); p2 = p1; p1 = i; return i; }
+  if (exact) {   // 한 권이 그림 한 권 — 두꺼운 책·얇은 책이 섞이되 합은 정확히 맞춤
+    var ws = 0; for (var e = 0; e < exact; e++) { var bi = next(), wg = Math.pow(BOOKS[bi][2], 0.6); list.push({ i: bi, g: wg }); ws += wg; }
+    list.forEach(function (b) { b.h = fillPx * b.g / ws; });
+  } else {
+    while (fillPx - sum >= 12) { var bj = next(), hh = Math.min(Math.max(14, Math.min(26, 176 * BOOKS[bj][2])), fillPx - sum); if (fillPx - sum - hh < 12) hh = fillPx - sum; list.push({ i: bj, h: hh }); sum += hh; }
+    if (!list.length && fillPx > 0) list.push({ i: next(), h: Math.max(8, fillPx) });
+  }
+  var out = ['<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="우리 반 책탑" data-n="' + list.length + '"><line x1="0" y1="1" x2="' + W + '" y2="1" stroke="#E8B84E" stroke-width="2" stroke-dasharray="6 5"/>'];
+  var y = H;
+  list.forEach(function (b) {
+    var m = BOOKS[b.i], h = b.h; y -= h;
+    var w = Math.max(150, Math.min(194, h / m[2])), x = (W - w) / 2 + Math.floor(r() * 13) - 6;
+    x = Math.max(0, Math.min(W - w, x));
+    var ih = h / (m[1] - m[0]), iy = y - m[0] * ih, flip = r() < 0.4;
+    out.push('<image href="img/books/b' + (b.i < 9 ? '0' : '') + (b.i + 1) + '.webp" x="' + x.toFixed(1) + '" y="' + iy.toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + ih.toFixed(1) + '" preserveAspectRatio="none"' + (flip ? ' transform="matrix(-1 0 0 1 ' + (2 * x + w).toFixed(1) + ' 0)"' : '') + '/>');
   });
   out.push('</svg>');
   return out.join('');
@@ -471,11 +432,9 @@ VIEWS.home = async function () {
   }
   if (d.recent.length) side += '<div class="card"><span class="muted">방금 쌓인 책</span><br><strong>' + esc(d.recent[0].title) + (d.recent[0].name ? ' · ' + esc(d.recent[0].name) : '') + '</strong></div>';
   if (!side) side = '<div class="card"><strong>아직 쌓인 책이 없어요</strong><p class="muted">책을 읽고 "책 기록하기"로 첫 책을 올려 보세요.</p></div>';
-  var titles = d.recent.map(function (r) { return r.title; });
-  if (exact) titles = titles.slice(0, exact).reverse();
   app.innerHTML = '<div class="row" style="justify-content:space-between;margin-bottom:4px"><h1 class="headline">우리 반 책탑 ' + d.total + '권 · ' + hText(cm) + '</h1>' +
     '<strong>' + (left > 0 ? esc(goal.name) + '까지 ' + left + '권 남았어요' : esc(goal.name) + '에 닿았어요') + '</strong></div><p class="muted" style="margin:0 0 14px">책 한 권을 ' + BOOK_CM + 'cm로 쌓아요</p>' +
-    '<div class="grid2"><div class="tower">' + towerSvg(fill, titles, exact) + compareSvg(goal) + '<div class="marks">' + marks + '</div></div><div class="side">' + side + '</div></div>';
+    '<div class="grid2"><div class="tower">' + towerSvg(fill, exact) + compareSvg(goal) + '<div class="marks">' + marks + '</div></div><div class="side">' + side + '</div></div>';
 };
 
 /* ---------- 목표에 닿았을 때 축하 (기기마다 한 번) ---------- */

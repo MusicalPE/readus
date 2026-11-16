@@ -111,7 +111,8 @@ try:
         ok('책이 적을 때는 한 권이 그림 한 권', pg.get_attribute('.tower svg >> nth=0', 'data-n') == '1')
         ok('높이 글: cm·m·km', pg.evaluate("[hText(64), hText(146), hText(300), hText(2580), hText(194700), hText(10000000)]") == ['64cm', '1m 46cm', '3m', '25.8m', '1.95km', '100km'])
         ok('학년을 못 정했을 때 내 키는 140cm, 선생님이 들어온 뒤에는 명단 학년(5학년 146cm)', pg.evaluate("goalsFor('')[2].cm") == 140 and pg.evaluate("goalsFor(classGrade())[2].cm") == 146)
-        ok('책탑 그림과 비교 그림', pg.locator('.tower svg').count() == 2 and pg.locator('.tower svg').first.locator('rect').count() >= 1)
+        ok('책탑 그림과 비교 그림', pg.locator('.tower svg').count() == 2 and pg.locator('.tower svg').first.locator('image').count() == 1)
+        ok('책 그림 12권이 모두 열림', pg.evaluate("Promise.all(BOOKS.map(function (b, i) { return new Promise(function (res) { var im = new Image(); im.onload = function () { res(im.naturalWidth > 100); }; im.onerror = function () { res(false); }; im.src = 'img/books/b' + (i < 9 ? '0' : '') + (i + 1) + '.webp'; }); })).then(function (a) { return a.length === 12 && a.every(Boolean); })"))
         ok('친구들이 쌓은 책에 이름과 권수', '김하늘' in pg.inner_text('.side') and '1권' in pg.inner_text('.side'))
         ok('학급 도서 진행(아직 0명)', '3명 중 0명' in pg.inner_text('.side'))
 

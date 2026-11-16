@@ -54,6 +54,9 @@ try { new vm.Script(read('sw.js'), { filename: 'sw.js' }); } catch (e) { fail('s
 const mf = JSON.parse(read('manifest.webmanifest'));
 mf.icons.concat([{ src: 'icons/icon.svg' }, { src: 'icons/icon-dark.svg' }, { src: 'icons/apple-touch-icon.png' }]).forEach(i => { if (!fs.existsSync(path.join(root, i.src))) fail('아이콘 파일이 없음: ' + i.src); });
 pass('앱 설치 파일 (설명 파일·아이콘·서비스 워커)');
+const nb = ((html.match(/var BOOKS = \[(.*)\];/) || [])[1] || '').split('],[').length;
+for (let i = 1; i <= nb; i++) { const f = 'img/books/b' + String(i).padStart(2, '0') + '.webp'; if (!fs.existsSync(path.join(root, f))) fail('책 그림이 없음: ' + f); }
+if (nb !== 12) fail('책 그림 표가 12권이 아님: ' + nb); else pass('책 그림 12권');
 const og = (html.match(/og:image" content="https:\/\/musicalpe\.github\.io\/readus\/([^"?]+)/) || [])[1];
 if (!og || !fs.existsSync(path.join(root, og))) fail('카카오톡 썸네일 그림이 없음: ' + og); else pass('카카오톡 썸네일 그림 ' + og);
 

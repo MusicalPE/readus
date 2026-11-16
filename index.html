@@ -64,7 +64,7 @@ img.cover{object-fit:cover;padding:0;border-left:0;display:block}
 .cvbtn:hover{transform:translateY(-2px);box-shadow:0 5px 14px rgba(62,44,32,.28)}
 .cvbtn:active{transform:translateY(1px) scale(.98);box-shadow:none}
 .cvbtn:focus-visible{outline:3px solid var(--mustard);outline-offset:2px}
-.cvbig{width:auto;height:min(62vh,520px);max-width:78vw;object-fit:contain;border-radius:6px 12px 12px 6px;box-shadow:0 8px 24px rgba(62,44,32,.3);background:var(--soft)}
+.cvbig{width:auto;min-width:120px;min-height:174px;height:min(62vh,348px);max-width:78vw;object-fit:contain;border-radius:6px 12px 12px 6px;box-shadow:0 8px 24px rgba(62,44,32,.3);background:var(--soft)}
 .cb{display:flex;gap:14px}
 .cb .b{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
 /* 현황판 */
@@ -178,7 +178,7 @@ table.t td,table.t th{padding:8px 6px;border-bottom:1px solid var(--line);text-a
 <script>
 'use strict';
 var TEMPLATE_URL = 'https://docs.google.com/spreadsheets/d/1i-lr4aewTmhj4eJ-hfXgjxaPzflmMyLMn-aqUepZjls/copy';   // 껍데기가 들어 있는 견본 시트 (사본 만들기)
-var APP = { version: '0.7.0', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
+var APP = { version: '0.7.1', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
 
 /* ---------- 작은 도구 ---------- */
 function $(sel, root) { return (root || document).querySelector(sel); }
@@ -374,13 +374,26 @@ function coverHtml(b) {
   var n = 0, t = String(b.title || ''); for (var i = 0; i < t.length; i++) n = (n * 31 + t.charCodeAt(i)) >>> 0;
   return '<div class="cover" style="background:' + BOOKC[n % (BOOKC.length - 1)] + '" aria-hidden="true">' + esc(t.slice(0, 12)) + '</div>';
 }
-// 표지를 누르면 크게 보기. 책 검색이 준 작은 그림 주소(R120x174)를 큰 크기로 바꿔 불러 보고, 안 되면 작은 그림을 키워서 보여 줌
-function bigCover(u) { return String(u).replace(/\/thumb\/R\d+x\d+(\.q\d+)?\//, '/thumb/R480x696.q85/'); }
+// 표지를 누르면 크게 보기. 책 검색이 준 주소는 작은 그림(120x174)이라, 더 큰 그림이 있을 만한 주소들을 함께 불러 보고 가장 큰 것을 보여 줌
+function coverCandidates(u) {
+  u = String(u); var list = [], m = u.match(/[?&]fname=([^&]+)/);
+  if (m) { try { var orig = decodeURIComponent(m[1]).replace(/^http:/, 'https:'); if (/^https:\/\//.test(orig)) list.push(orig); } catch (e) {} }   // 줄이기 전 원본 그림
+  if (/\/thumb\/[A-Z]\d+x\d+/.test(u)) { list.push(u.replace(/\/thumb\/[A-Z]\d+x\d+(\.q\d+)?\//, '/thumb/R600x0.q90/')); list.push(u.replace(/\/thumb\/[A-Z]\d+x\d+(\.q\d+)?\//, '/thumb/R480x696.q85/')); }
+  list.push(u);
+  return list.filter(function (x, k) { return list.indexOf(x) === k; });
+}
 function showCover(src, title, meta) {
   $('#modal').innerHTML = '<div class="shade mid" id="cvs"><div class="qrbox" role="dialog" aria-label="' + esc(title) + ' 표지"><img class="cvbig" id="cvi" alt="' + esc(title) + ' 표지" referrerpolicy="no-referrer"><strong style="font-size:18px">' + esc(title) + '</strong>' + (meta ? '<span class="muted">' + esc(meta) + '</span>' : '') + '<button class="btn" type="button" id="cvx">닫기</button></div></div>';
-  var img = $('#cvi'), big = bigCover(src);
-  img.onerror = function () { if (img.getAttribute('src') !== src) img.src = src; };
-  img.src = big;
+  var img = $('#cvi'), best = 0;
+  function use(url, w, h) {
+    if (!document.body.contains(img) || w <= best) return;
+    best = w; img.src = url; img.style.height = 'min(62vh,' + Math.round(Math.min(560, h * 2)) + 'px)';   // 작은 그림은 두 배까지만 키움 (너무 흐려지지 않게)
+  }
+  coverCandidates(src).forEach(function (url) {
+    var t = new Image(); t.referrerPolicy = 'no-referrer';
+    t.onload = function () { use(url, t.naturalWidth, t.naturalHeight); };
+    t.src = url;
+  });
   $('#cvx').onclick = function () { $('#modal').innerHTML = ''; };
   $('#cvs').onclick = function (ev) { if (ev.target === ev.currentTarget) $('#modal').innerHTML = ''; };
   $('#cvx').focus();

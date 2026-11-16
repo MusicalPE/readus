@@ -68,7 +68,8 @@ try:
         ok('표지 그림 주소 저장', state()['ClassBooks'][1][5] == 'https://example.com/cover.jpg')
         pg.locator('#cbl .cvbtn').first.click(); pg.wait_for_selector('#cvi')
         ok('표지를 누르면 크게 보기', '알사탕' in pg.inner_text('.qrbox') and pg.get_attribute('#cvi', 'alt') == '알사탕 표지')
-        ok('큰 그림 주소 만들기', pg.evaluate("bigCover('https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Fa')") == 'https://search1.kakaocdn.net/thumb/R480x696.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Fa' and pg.evaluate("bigCover('https://example.com/cover.jpg')") == 'https://example.com/cover.jpg')
+        cands = pg.evaluate("coverCandidates('https://search1.kakaocdn.net/thumb/R120x174.q85/?fname=http%3A%2F%2Ft1.daumcdn.net%2Flbook%2Fimage%2F123%3Ftimestamp%3D1')")
+        ok('큰 그림 후보: 원본 → 큰 크기 → 작은 그림', cands[0] == 'https://t1.daumcdn.net/lbook/image/123?timestamp=1' and '/thumb/R600x0.q90/' in cands[1] and cands[-1].startswith('https://search1.kakaocdn.net/thumb/R120x174') and pg.evaluate("coverCandidates('https://example.com/cover.jpg')") == ['https://example.com/cover.jpg'])
         pg.click('#cvx'); ok('크게 보기 닫기', pg.locator('.shade').count() == 0)
 
         # 5. 학생 기록 — 감상 기준 안내 (막지 않음)

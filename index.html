@@ -173,7 +173,7 @@ table.t td,table.t th{padding:8px 6px;border-bottom:1px solid var(--line);text-a
 <script>
 'use strict';
 var TEMPLATE_URL = 'https://docs.google.com/spreadsheets/d/1i-lr4aewTmhj4eJ-hfXgjxaPzflmMyLMn-aqUepZjls/copy';   // 껍데기가 들어 있는 견본 시트 (사본 만들기)
-var APP = { version: '0.5.1', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
+var APP = { version: '0.6.0', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
 
 /* ---------- 작은 도구 ---------- */
 function $(sel, root) { return (root || document).querySelector(sel); }
@@ -508,8 +508,16 @@ VIEWS.student = async function () {
         (b.status !== 'approved' && APP.ping.shell >= 2 ? '<button class="textlink" type="button" data-dm="' + esc(b.rid) + '">지우기</button>' : '') + '</div>';
     }).join('') : '<span class="muted">아직 기록이 없어요.</span>') + '</div></div></div>';
   var picked = { classBookId: '', cover: '' };
+  // 제목이 학급 도서와 같으면(빈칸·괄호 안 글자는 빼고 견줌) 단추를 누르지 않아도 '함께 읽는 책'으로 이어 줌
+  function sameBook(t) { return String(t || '').replace(/\([^)]*\)|\[[^\]]*\]/g, '').replace(/[\s·:,.!?~-]/g, '').toLowerCase(); }
+  function linkClassBook() {
+    var key = sameBook($('#t').value), c = key ? d.classBooks.filter(function (x) { return !x.my && sameBook(x.title) === key; })[0] : null;
+    picked.classBookId = c ? c.id : '';
+    if (c && !picked.cover) picked.cover = c.cover;
+    $('#cbnote').innerHTML = c ? '<span class="pill" style="margin-top:8px">함께 읽는 책</span>' : '';
+  }
   $('#out').onclick = function () { APP.me = null; render(); };
-  wireSearch('s', function (b) { $('#t').value = b.title; $('#a').value = b.author; $('#p').value = b.publisher; picked.cover = b.cover; picked.classBookId = ''; $('#cbnote').innerHTML = ''; $('#n').focus(); });
+  wireSearch('s', function (b) { $('#t').value = b.title; $('#a').value = b.author; $('#p').value = b.publisher; picked.cover = b.cover; linkClassBook(); $('#n').focus(); });
   app.querySelectorAll('[data-cb]').forEach(function (btn) {
     btn.onclick = function () {
       var c = d.classBooks.filter(function (x) { return x.id === btn.dataset.cb; })[0];
@@ -517,7 +525,7 @@ VIEWS.student = async function () {
       $('#cbnote').innerHTML = '<span class="pill" style="margin-top:8px">함께 읽는 책</span>'; $('#n').focus(); $('#rec').scrollIntoView({ behavior: 'smooth', block: 'start' });
     };
   });
-  $('#t').addEventListener('input', function () { if (picked.classBookId) { picked.classBookId = ''; $('#cbnote').innerHTML = ''; } picked.cover = ''; });
+  $('#t').addEventListener('input', function () { picked.cover = ''; linkClassBook(); });
   app.querySelectorAll('[data-dm]').forEach(function (btn) {
     btn.onclick = async function () {
       if (!confirm('이 기록을 지울까요?')) return;

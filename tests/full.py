@@ -41,11 +41,11 @@ try:
         # 2. 선생님 로그인 (틀린 비밀번호 → 맞는 비밀번호)
         pg.click('[data-go=admin]'); pg.fill('#apw', '0000'); pg.click('#lg button[type=submit]'); pg.wait_for_timeout(300)
         ok('틀린 비밀번호는 막힘', '올바르지' in toast())
-        pg.fill('#apw', '1234'); pg.click('#lg button[type=submit]'); pg.wait_for_selector('.tabs')
-        ok('선생님 로그인', pg.locator('.tab').count() == 4)
+        pg.fill('#apw', '1234'); pg.click('#lg button[type=submit]'); pg.wait_for_selector('.menu')
+        ok('선생님 로그인 → 메뉴 8개', pg.locator('.mi').count() == 8)
 
         # 3. 학생 등록
-        pg.click('[data-tab=students]'); pg.fill('#bt', '5 1 1 김하늘\n5\t1\t2\t이도윤\n5,1,3,박서연'); pg.click('#bulk button[type=submit]')
+        pg.click('[data-tab=register]'); pg.fill('#bt', '5 1 1 김하늘\n5\t1\t2\t이도윤\n5,1,3,박서연'); pg.click('#bulk button[type=submit]')
         pg.wait_for_selector('table.t tbody tr:nth-child(3)')
         ok('학생 3명 등록 (빈칸·탭·쉼표)', pg.locator('table.t tbody tr').count() == 3)
 
@@ -106,21 +106,33 @@ try:
         ok('학급 도서 진행 1명', '3명 중 1명' in pg.inner_text('.side'))
 
         # 9. 설정: 감상 기준 글자 수, 이름 가리기
-        pg.click('[data-go=admin]'); pg.wait_for_selector('.tabs'); pg.click('[data-tab=set]')
+        pg.click('[data-go=admin]'); pg.wait_for_selector('.menu'); pg.click('[data-tab=rule]')
         pg.select_option('#rk', 'char'); pg.fill('#rm', '30'); pg.click('#rf button[type=submit]'); pg.wait_for_timeout(400)
-        pg.click('[data-tab=set]'); ok('감상 기준 저장 (글자 수 30)', pg.input_value('#rm') == '30' and pg.input_value('#rk') == 'char')
-        pg.uncheck('#sn'); pg.wait_for_timeout(500)
+        pg.click('[data-tab=rule]'); ok('감상 기준 저장 (글자 수 30)', pg.input_value('#rm') == '30' and pg.input_value('#rk') == 'char')
+        pg.click('[data-tab=board]'); pg.wait_for_selector('#sn'); pg.uncheck('#sn'); pg.wait_for_timeout(500)
         pg.click('[data-go=home]'); pg.wait_for_selector('.tower svg')
         ok('이름 가리기: 현황판에 이름 없음', '김하늘' not in pg.inner_text('#app') and '2권' in pg.inner_text('h1.headline'))
 
         # 10. 학생 비밀번호
-        pg.click('[data-go=admin]'); pg.wait_for_selector('.tabs'); pg.click('[data-tab=students]')
+        pg.click('[data-go=admin]'); pg.wait_for_selector('.menu'); pg.click('[data-tab=students]')
         pg.locator('table.t tbody tr').first.locator('[data-pw]').click(); pg.fill('#np', '4321'); pg.click('#spw button[type=submit]'); pg.wait_for_timeout(400)
         pg.click('[data-go=home]'); pg.wait_for_selector('h1.headline'); pg.click('[data-go=student]'); pg.wait_for_selector('#out'); pg.click('#out'); pg.wait_for_selector('.name')
         pg.locator('.name', has_text='김하늘').click(); pg.wait_for_selector('#pw'); pg.fill('#pw', '0000'); pg.click('#pwf button[type=submit]'); pg.wait_for_timeout(400)
         ok('틀린 학생 비밀번호는 막힘', '맞지 않습니다' in toast() and pg.locator('#rec').count() == 0)
         pg.fill('#pw', '4321'); pg.click('#pwf button[type=submit]'); pg.wait_for_selector('#rec')
         ok('맞는 비밀번호로 들어감', '김하늘' in pg.inner_text('#app'))
+
+        # 10-2. 선생님 메뉴: 업데이트 내역, 비밀번호 바꾸기, 로그아웃
+        pg.click('[data-go=home]'); pg.wait_for_selector('h1.headline'); pg.click('[data-go=admin]'); pg.wait_for_selector('.menu')
+        ok('선생님 메뉴는 기록 승인부터', pg.locator('.mi[aria-current=page]').inner_text().startswith('기록 승인'))
+        pg.click('[data-tab=log]'); pg.wait_for_selector('#logl details')
+        ok('업데이트 내역 표시', pg.locator('#logl details').count() >= 1)
+        pg.click('[data-tab=pw]'); pg.fill('#npw', 'abcd'); pg.click('#pf button[type=submit]'); pg.wait_for_timeout(400)
+        pg.click('#lo'); pg.wait_for_selector('h1.headline'); pg.click('[data-go=admin]'); pg.fill('#apw', '1234'); pg.click('#lg button[type=submit]'); pg.wait_for_timeout(300)
+        ok('비밀번호를 바꾸면 옛 비밀번호는 막힘', pg.locator('.menu').count() == 0)
+        pg.fill('#apw', 'abcd'); pg.click('#lg button[type=submit]'); pg.wait_for_selector('.menu')
+        ok('새 비밀번호로 로그인', pg.locator('.mi').count() == 8)
+        pg.click('[data-go=home]'); pg.wait_for_selector('h1.headline'); pg.click('[data-go=student]'); pg.wait_for_selector('#rec')
 
         # 11. 새로 고쳐도 이어지는지, 좁은 화면
         pg.reload(); pg.wait_for_selector('.name, #rec')
@@ -129,6 +141,9 @@ try:
         pg.screenshot(path=os.path.join(ROOT, 'tests', 'home-phone.png'))
         pg.set_viewport_size({'width': 1200, 'height': 900}); pg.goto(URL + '#home'); pg.wait_for_selector('.tower svg'); pg.wait_for_timeout(600)
         pg.screenshot(path=os.path.join(ROOT, 'tests', 'home.png'))
+        pg.click('[data-go=admin]'); pg.wait_for_selector('.menu'); pg.wait_for_timeout(300); pg.screenshot(path=os.path.join(ROOT, 'tests', 'admin.png'))
+        pg.set_viewport_size({'width': 390, 'height': 844}); pg.wait_for_timeout(200)
+        ok('선생님 메뉴도 휴대폰 너비에서 넘치지 않음', pg.evaluate('document.documentElement.scrollWidth <= window.innerWidth + 1'))
         b.close()
 finally:
     srv.terminate()

@@ -39,7 +39,7 @@ button{cursor:pointer}
 label.f{display:block;font-size:12px;font-weight:700;color:var(--sub);margin:10px 0 6px}
 .in{width:100%;min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
 textarea.in{min-height:96px;resize:vertical;line-height:1.5}
-.in:focus,.btn:focus-visible,.tab:focus-visible,.name:focus-visible{outline:3px solid var(--mustard);outline-offset:1px}
+.in:focus,.btn:focus-visible,.name:focus-visible,.q:focus-visible,.found:focus-visible{outline:3px solid var(--mustard);outline-offset:1px}
 .bar{height:12px;border-radius:6px;background:var(--soft);overflow:hidden}
 .bar i{display:block;height:100%;border-radius:6px;background:var(--sage)}
 .cover{flex:0 0 60px;width:60px;height:84px;border-radius:4px 8px 8px 4px;display:flex;align-items:center;justify-content:center;text-align:center;font-family:Jua,sans-serif;font-size:12px;line-height:1.2;padding:4px;overflow:hidden;color:var(--ink);border-left:6px solid rgba(62,44,32,.25)}
@@ -63,10 +63,40 @@ img.cover{object-fit:cover;padding:0;border-left:0}
 .names{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
 .name{min-height:52px;border:1px solid var(--line);border-radius:12px;background:var(--card);font-weight:700}
 .name small{display:block;font-weight:400;color:var(--sub);font-size:12px}
-/* 탭 */
-.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
-.tab{min-height:44px;padding:0 16px;border:1px solid var(--line2);border-radius:999px;background:var(--card);font-weight:700}
-.tab[aria-selected="true"]{background:var(--ink);color:var(--card);border-color:var(--ink)}
+/* 선생님 메뉴 (왼쪽 메뉴 + 오른쪽 칸) */
+.adm{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-start}
+.menu{flex:0 0 230px;padding:10px;display:flex;flex-direction:column;gap:2px}
+.mi{display:flex;align-items:center;gap:12px;min-height:46px;padding:0 14px;border:0;border-radius:12px;background:none;font-weight:700;text-align:left;width:100%}
+.mi i{flex:none;width:8px;height:8px;border-radius:50%;background:var(--line)}
+.mi span:first-of-type{flex:1}
+.mi[aria-current="page"]{background:var(--peach);color:#8E3A22}
+.mi[aria-current="page"] i{background:#C65D3B}
+.badge{flex:none;min-width:22px;height:22px;padding:0 6px;border-radius:11px;background:#C65D3B;color:#FFFCF6;font-size:12px;display:inline-flex;align-items:center;justify-content:center}
+.pane{flex:1 1 420px;min-width:0;padding:0}
+.ph{display:flex;align-items:center;gap:10px;font-size:19px;padding:18px 22px;border-bottom:1px solid var(--line)}
+.ph i{width:9px;height:9px;border-radius:50%;background:#C65D3B}
+.pb{padding:20px 22px}
+.item{border:1px solid var(--line);border-radius:14px;padding:16px 18px;background:var(--card)}
+.textlink{min-height:44px;padding:0 6px;border:0;background:none;color:var(--sub);font-weight:700;border-radius:8px}
+summary{cursor:pointer;min-height:32px;border-radius:8px}
+/* 마우스를 올리거나 누를 때 */
+.btn,.mi,.name,.q,.found,.textlink,.brand,summary{transition:transform .08s ease,background-color .12s ease,box-shadow .12s ease,color .12s ease}
+.btn:hover:not(:disabled){background:#5A4232;box-shadow:0 3px 10px rgba(62,44,32,.22);transform:translateY(-1px)}
+.btn.line:hover:not(:disabled){background:var(--soft);box-shadow:0 3px 10px rgba(62,44,32,.12)}
+.btn:active:not(:disabled){transform:translateY(1px) scale(.98);box-shadow:none}
+.mi:hover{background:var(--soft)}
+.mi[aria-current="page"]:hover{background:#F3CDB4}
+.mi:active{transform:scale(.98)}
+.name:hover,.q:hover,.found:hover{background:var(--soft);border-color:var(--line2);box-shadow:0 3px 10px rgba(62,44,32,.12);transform:translateY(-1px)}
+.name:active,.q:active,.found:active{transform:translateY(1px) scale(.98);box-shadow:none}
+.textlink:hover{color:var(--ink);background:var(--soft)}
+.textlink:active{transform:scale(.97)}
+.brand:hover b{text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:4px}
+.brand:active{transform:scale(.98)}
+summary:hover{color:#8E3A22}
+.mi:focus-visible,.textlink:focus-visible,summary:focus-visible{outline:3px solid var(--mustard);outline-offset:1px}
+@media (prefers-reduced-motion:reduce){.btn,.mi,.name,.q,.found,.textlink,.brand,summary{transition:none}.btn:hover,.name:hover,.q:hover,.found:hover,.btn:active,.mi:active,.name:active,.q:active,.found:active{transform:none}}
+@media (max-width:760px){.menu{flex:1 1 100%;flex-direction:row;flex-wrap:wrap}.mi{width:auto;flex:1 1 44%}}
 /* 아래에서 올라오는 창 */
 .shade{position:fixed;inset:0;background:rgba(62,44,32,.55);display:flex;align-items:flex-end;justify-content:center;z-index:20}
 .sheet{background:var(--card);width:100%;max-width:520px;max-height:92vh;overflow:auto;border-radius:24px 24px 0 0;padding:24px 20px;display:flex;flex-direction:column;gap:12px}
@@ -98,7 +128,7 @@ table.t td,table.t th{padding:8px 6px;border-bottom:1px solid var(--line);text-a
 <script>
 'use strict';
 var TEMPLATE_URL = 'https://docs.google.com/spreadsheets/d/1i-lr4aewTmhj4eJ-hfXgjxaPzflmMyLMn-aqUepZjls/copy';   // 껍데기가 들어 있는 견본 시트 (사본 만들기)
-var APP = { version: '0.1.2', requiredShell: 1, s: '', ping: null, settings: null, relay: '', token: '', me: null };
+var APP = { version: '0.2.0', requiredShell: 1, s: '', ping: null, settings: null, relay: '', token: '', me: null };
 
 /* ---------- 작은 도구 ---------- */
 function $(sel, root) { return (root || document).querySelector(sel); }
@@ -147,7 +177,7 @@ function render() {
   var nav = $('#nav');
   nav.innerHTML = v === 'home'
     ? '<button class="btn" type="button" data-go="student">책 기록하기</button><button class="btn line" type="button" data-go="admin">선생님</button>'
-    : '<button class="btn line" type="button" data-go="home">현황판</button>';
+    : (v === 'admin' && APP.token) ? '' : '<button class="btn line" type="button" data-go="home">현황판</button>';
   VIEWS[v]();
 }
 document.addEventListener('click', function (ev) {
@@ -271,9 +301,9 @@ function coverHtml(b) {
   var n = 0, t = String(b.title || ''); for (var i = 0; i < t.length; i++) n = (n * 31 + t.charCodeAt(i)) >>> 0;
   return '<div class="cover" style="background:' + BOOKC[n % (BOOKC.length - 1)] + '" aria-hidden="true">' + esc(t.slice(0, 12)) + '</div>';
 }
-function classBookCard(c, extra) {
+function classBookCard(c, extra, cls) {
   var pct = c.total ? Math.round(c.read / c.total * 100) : 0, due = dueText(c.due);
-  return '<div class="card cb">' + coverHtml(c) + '<div class="b"><div class="row" style="justify-content:space-between"><strong>' + esc(c.title) + '</strong>' + (due ? '<span class="pill">' + esc(due) + '</span>' : '') + '</div>' +
+  return '<div class="' + (cls || 'card') + ' cb">' + coverHtml(c) + '<div class="b"><div class="row" style="justify-content:space-between"><strong>' + esc(c.title) + '</strong>' + (due ? '<span class="pill">' + esc(due) + '</span>' : '') + '</div>' +
     '<span class="muted">' + esc([c.author, c.publisher].filter(Boolean).join(' · ')) + '</span>' +
     '<div class="bar" aria-hidden="true"><i style="width:' + pct + '%"></i></div><span>' + c.total + '명 중 <b>' + c.read + '명</b>이 읽고 기록했어요</span>' + (extra || '') + '</div></div>';
 }
@@ -436,12 +466,14 @@ async function enter(id, pw) {
   APP.me = { id: id, pw: pw }; $('#modal').innerHTML = ''; render();
 }
 
-/* ---------- 선생님 화면 ---------- */
+/* ---------- 선생님 메뉴 ---------- */
 var ADMIN = { tab: 'approve', data: null };
+var ADMIN_MENU = [['approve', '기록 승인'], ['class', '학급 도서'], ['students', '학생 관리'], ['register', '학생 등록'], ['rule', '감상 기준'], ['board', '현황판 · 주소'], ['pw', '비밀번호'], ['log', '업데이트 내역']];
+function adminOut() { APP.token = ''; try { sessionStorage.removeItem('ru_token|' + APP.s); } catch (e) {} }
 VIEWS.admin = async function () {
   var app = $('#app');
   if (!APP.token) {
-    app.innerHTML = '<form class="card" id="lg" style="max-width:420px;margin:0 auto"><h1 style="font-size:22px">선생님 로그인</h1><label class="f" for="apw">비밀번호</label><input class="in" id="apw" type="password" autocomplete="current-password"><button class="btn wide" type="submit" style="margin-top:12px">들어가기</button><p class="muted">처음 비밀번호는 1234 입니다. 들어간 뒤 설정에서 바꿔 주세요.</p></form>';
+    app.innerHTML = '<form class="card" id="lg" style="max-width:420px;margin:0 auto"><h1 style="font-size:22px">선생님 로그인</h1><label class="f" for="apw">비밀번호</label><input class="in" id="apw" type="password" autocomplete="current-password"><button class="btn wide" type="submit" style="margin-top:12px">들어가기</button><p class="muted">처음 비밀번호는 1234 입니다. 들어간 뒤 선생님 메뉴에서 바꿔 주세요.</p></form>';
     $('#apw').focus();
     $('#lg').onsubmit = async function (ev) {
       ev.preventDefault();
@@ -454,12 +486,19 @@ VIEWS.admin = async function () {
     return;
   }
   var d = await guard(function () { return rpc('getAllDataAdmin', [APP.token]); });
-  if (!d) { APP.token = ''; try { sessionStorage.removeItem('ru_token|' + APP.s); } catch (e) {} render(); return; }
+  if (!d) { adminOut(); render(); return; }
   ADMIN.data = d; APP.settings = d.settings;
   var pend = d.books.filter(function (b) { return b.status === 'pending'; });
-  var tabs = [['approve', '승인' + (pend.length ? ' ' + pend.length : '')], ['class', '학급 도서'], ['students', '학생'], ['set', '설정']];
-  app.innerHTML = '<div class="tabs" role="tablist">' + tabs.map(function (t) { return '<button class="tab" type="button" role="tab" aria-selected="' + (ADMIN.tab === t[0]) + '" data-tab="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div><div id="pane"></div>';
+  if (!ADMIN_TABS[ADMIN.tab]) ADMIN.tab = 'approve';
+  var label = ADMIN_MENU.filter(function (m) { return m[0] === ADMIN.tab; })[0][1];
+  app.innerHTML = '<div class="row" style="justify-content:space-between"><button class="textlink" type="button" data-go="home">← 현황판으로</button><button class="textlink" type="button" id="lo">로그아웃</button></div>' +
+    '<h1 style="font-size:26px;margin:6px 0 16px">선생님 메뉴</h1><div class="adm"><nav class="menu card" aria-label="선생님 메뉴">' +
+    ADMIN_MENU.map(function (m) {
+      var badge = m[0] === 'approve' && pend.length ? '<span class="badge">' + pend.length + '</span>' : (m[0] === 'pw' && APP.pwDefault ? '<span class="badge">!</span>' : '');
+      return '<button class="mi" type="button" data-tab="' + m[0] + '"' + (ADMIN.tab === m[0] ? ' aria-current="page"' : '') + '><i aria-hidden="true"></i><span>' + m[1] + '</span>' + badge + '</button>';
+    }).join('') + '</nav><section class="card pane"><h2 class="ph"><i aria-hidden="true"></i>' + esc(ADMIN.tab === 'approve' ? '기록 승인 · 대기 ' + pend.length + '건' : label) + '</h2><div class="pb" id="pane"></div></section></div>';
   app.querySelectorAll('[data-tab]').forEach(function (b) { b.onclick = function () { ADMIN.tab = b.dataset.tab; render(); }; });
+  $('#lo').onclick = function () { adminOut(); go('home'); };
   ADMIN_TABS[ADMIN.tab]($('#pane'), d, pend);
 };
 function stuName(d, sid) { var s = d.students.filter(function (x) { return x.id === sid; })[0]; return s ? s.number + '번 ' + s.name : '(지워진 학생)'; }
@@ -467,14 +506,13 @@ async function act(fn, args, msg) { var r = await guard(function () { return rpc
 var ADMIN_TABS = {
   approve: function (el, d, pend) {
     var rule = d.settings.rule, unit = rule.kind === 'char' ? '글자' : '문장';
-    el.innerHTML = '<div class="row" style="justify-content:space-between;margin-bottom:12px"><h1 style="font-size:24px">승인 대기 ' + pend.length + '건</h1>' + (pend.length ? '<button class="btn" type="button" id="all">모두 승인</button>' : '') + '</div>' +
-      (pend.length ? '<div class="stack">' + pend.map(function (b) {
+    el.innerHTML = (pend.length ? '<div class="row" style="justify-content:flex-end;margin-bottom:12px"><button class="btn" type="button" id="all">모두 승인</button></div><div class="stack">' + pend.map(function (b) {
         var short = rule.on && countNote(b.note, rule.kind) < rule.min;
-        return '<div class="card stack" data-rid="' + esc(b.rid) + '"><div class="row" style="justify-content:space-between"><strong style="font-size:17px">' + esc(b.title) + '</strong><span class="muted">' + esc(stuName(d, b.sid)) + ' · ' + esc(b.date) + '</span></div>' +
+        return '<div class="item stack" data-rid="' + esc(b.rid) + '"><div class="row" style="justify-content:space-between"><strong style="font-size:17px">' + esc(b.title) + '</strong><span class="muted">' + esc(stuName(d, b.sid)) + ' · ' + esc(b.date) + '</span></div>' +
           '<span class="muted">' + esc([b.author, b.publisher].filter(Boolean).join(' · ')) + (b.classBookId ? ' · 함께 읽는 책' : '') + '</span><p class="note">' + (b.note ? esc(b.note) : '<span class="muted">(감상을 적지 않았어요)</span>') + '</p>' +
           (short ? '<div><span class="pill wait">기준보다 짧음 (' + rule.min + unit + ' 이상)</span></div>' : '') +
           '<div class="row"><button class="btn small" type="button" data-ok>승인 (+1권)</button><button class="btn line small" type="button" data-back>다시 써 오기</button><button class="btn line small" type="button" data-del>지우기</button></div></div>';
-      }).join('') + '</div>' : '<div class="card muted">기다리는 기록이 없어요.</div>');
+      }).join('') + '</div>' : '<p class="muted">기다리는 기록이 없어요.</p>');
     if (pend.length) $('#all').onclick = function () { act('approveBooks', [pend.map(function (b) { return b.rid; })], pend.length + '권을 승인했어요.'); };
     el.querySelectorAll('[data-rid]').forEach(function (card) {
       var rid = card.dataset.rid;
@@ -489,14 +527,14 @@ var ADMIN_TABS = {
   },
   class: function (el, d) {
     var ok = d.books.filter(function (b) { return b.status === 'approved'; });
-    el.innerHTML = '<h1 style="font-size:24px;margin-bottom:12px">학급 도서 · 우리 반이 함께 읽는 책</h1><div class="grid2"><div class="stack" style="flex:3 1 420px;min-width:0" id="cbl">' +
+    el.innerHTML = '<div class="grid2"><div class="stack" style="flex:3 1 380px;min-width:0" id="cbl">' +
       (d.classBooks.length ? d.classBooks.map(function (c) {
         var readers = {}; ok.forEach(function (b) { if (b.classBookId === c.id) readers[b.sid] = 1; });
         var unread = d.students.filter(function (s) { return !readers[s.id]; });
         c.read = d.students.length - unread.length; c.total = d.students.length;
-        return classBookCard(c, '<details><summary style="cursor:pointer;min-height:32px">아직 안 읽은 친구 ' + unread.length + '명 (선생님만 보여요)</summary><p class="muted" style="margin:6px 0">' + (unread.length ? esc(unread.map(function (s) { return s.name; }).join(', ')) : '모두 읽었어요.') + '</p></details><div><button class="btn line small" type="button" data-rm="' + esc(c.id) + '">학급 도서에서 빼기</button></div>');
-      }).join('') : '<div class="card muted">아직 정한 책이 없어요. 오른쪽에서 정해 보세요.</div>') + '</div>' +
-      '<form class="card" id="cbf" style="flex:1 1 280px">' + '<strong style="font-size:17px">학급 도서 정하기</strong>' + searchBox('c') +
+        return classBookCard(c, '<details><summary>아직 안 읽은 친구 ' + unread.length + '명 (선생님만 보여요)</summary><p class="muted" style="margin:6px 0">' + (unread.length ? esc(unread.map(function (s) { return s.name; }).join(', ')) : '모두 읽었어요.') + '</p></details><div><button class="btn line small" type="button" data-rm="' + esc(c.id) + '">학급 도서에서 빼기</button></div>', 'item');
+      }).join('') : '<p class="muted">아직 정한 책이 없어요. 옆에서 정해 보세요.</p>') + '</div>' +
+      '<form class="item" id="cbf" style="flex:1 1 260px">' + '<strong style="font-size:17px">학급 도서 정하기</strong>' + searchBox('c') +
       '<label class="f" for="ct">책 제목</label><input class="in" id="ct" maxlength="100" required autocomplete="off"><label class="f" for="ca">지은이</label><input class="in" id="ca" maxlength="60" autocomplete="off"><label class="f" for="cp">출판사</label><input class="in" id="cp" maxlength="60" autocomplete="off">' +
       '<label class="f" for="cd">언제까지 읽을까요 (비워 두어도 돼요)</label><input class="in" id="cd" type="date" min="' + todayStr() + '"><button class="btn wide" type="submit" style="margin-top:12px">학급 도서로 정하기</button>' +
       '<p class="muted">권하는 책이지 숙제가 아니에요. 기한이 지나도 아이들은 그대로 기록할 수 있습니다.</p></form></div>';
@@ -508,18 +546,11 @@ var ADMIN_TABS = {
   },
   students: function (el, d) {
     var cnt = {}; d.books.forEach(function (b) { if (b.status === 'approved') cnt[b.sid] = (cnt[b.sid] || 0) + 1; });
-    el.innerHTML = '<h1 style="font-size:24px;margin-bottom:12px">학생 ' + d.students.length + '명</h1><div class="grid2"><div class="card" style="flex:3 1 420px;min-width:0;overflow:auto">' +
+    el.innerHTML = '<p class="muted" style="margin-top:0">등록된 학생 ' + d.students.length + '명</p><div style="overflow:auto">' +
       (d.students.length ? '<table class="t"><thead><tr><th>학년</th><th>반</th><th>번호</th><th>이름</th><th>승인된 책</th><th>비밀번호</th><th></th></tr></thead><tbody>' + d.students.map(function (s) {
         return '<tr data-sid="' + esc(s.id) + '"><td>' + esc(s.grade) + '</td><td>' + esc(s.cls) + '</td><td>' + esc(s.number) + '</td><td>' + esc(s.name) + '</td><td>' + (cnt[s.id] || 0) + '권</td><td><button class="btn line small" type="button" data-pw>' + (s.lock ? '바꾸기' : '정하기') + '</button></td><td><button class="btn line small" type="button" data-rm>지우기</button></td></tr>';
-      }).join('') + '</tbody></table>' : '<span class="muted">아직 등록된 학생이 없어요.</span>') + '</div>' +
-      '<form class="card" id="bulk" style="flex:1 1 280px"><strong style="font-size:17px">학생 한꺼번에 등록</strong><label class="f" for="bt">한 줄에 한 명: 학년 반 번호 이름 (엑셀에서 복사해 붙여도 돼요)</label><textarea class="in" id="bt" style="min-height:180px" placeholder="5 1 1 김하늘&#10;5 1 2 이도윤"></textarea><button class="btn wide" type="submit" style="margin-top:12px">등록하기</button></form></div>';
-    $('#bulk').onsubmit = function (ev) {
-      ev.preventDefault();
-      var rows = $('#bt').value.split(/\n/).map(function (l) { return l.trim().split(/[\t, ]+/); }).filter(function (p) { return p.length >= 4 && p[3]; })
-        .map(function (p) { return { grade: p[0], cls: p[1], number: p[2], name: p.slice(3).join(' ') }; });
-      if (!rows.length) { toast('"학년 반 번호 이름" 순서로 적어 주세요.'); return; }
-      act('addStudentsBulk', [rows], rows.length + '명을 등록했어요.');
-    };
+      }).join('') + '</tbody></table>' : '<p>아직 등록된 학생이 없어요. <button class="btn small" type="button" id="toreg">학생 등록하러 가기</button></p>') + '</div>';
+    if ($('#toreg')) $('#toreg').onclick = function () { ADMIN.tab = 'register'; render(); };
     el.querySelectorAll('[data-sid]').forEach(function (tr) {
       var sid = tr.dataset.sid;
       $('[data-rm]', tr).onclick = function () { if (confirm('이 학생과 학생의 책 기록을 모두 지울까요? 되돌릴 수 없어요.')) act('deleteStudent', [sid], '지웠어요.'); };
@@ -530,23 +561,44 @@ var ADMIN_TABS = {
       };
     });
   },
-  set: function (el, d) {
-    var r = d.settings.rule, link = location.origin + location.pathname + '?s=' + encodeURIComponent(APP.s);
-    el.innerHTML = '<h1 style="font-size:24px;margin-bottom:12px">설정</h1><div class="grid2">' +
-      '<form class="card" id="rf" style="flex:1 1 320px"><strong style="font-size:17px">감상 기준</strong>' +
-      '<label class="row" style="min-height:44px;font-weight:700;margin-top:6px"><input type="checkbox" id="ron" style="width:22px;height:22px"' + (r.on ? ' checked' : '') + '> 보내기 전에 한 번 더 생각하게 하기</label>' +
+  register: function (el) {
+    el.innerHTML = '<form id="bulk" style="max-width:520px"><label class="f" for="bt" style="margin-top:0">한 줄에 한 명: 학년 반 번호 이름 (엑셀에서 복사해 붙여도 돼요)</label><textarea class="in" id="bt" style="min-height:220px" placeholder="5 1 1 김하늘&#10;5 1 2 이도윤"></textarea><button class="btn" type="submit" style="margin-top:12px">등록하기</button><p class="muted">비밀번호는 등록한 뒤 "학생 관리"에서 학생마다 정할 수 있어요. 정하지 않으면 이름만 눌러 들어갑니다.</p></form>';
+    $('#bulk').onsubmit = function (ev) {
+      ev.preventDefault();
+      var rows = $('#bt').value.split(/\n/).map(function (l) { return l.trim().split(/[\t, ]+/); }).filter(function (p) { return p.length >= 4 && p[3]; })
+        .map(function (p) { return { grade: p[0], cls: p[1], number: p[2], name: p.slice(3).join(' ') }; });
+      if (!rows.length) { toast('"학년 반 번호 이름" 순서로 적어 주세요.'); return; }
+      ADMIN.tab = 'students';
+      act('addStudentsBulk', [rows], rows.length + '명을 등록했어요.');
+    };
+  },
+  rule: function (el, d) {
+    var r = d.settings.rule;
+    el.innerHTML = '<form id="rf" style="max-width:520px"><label class="row" style="min-height:44px;font-weight:700"><input type="checkbox" id="ron" style="width:22px;height:22px"' + (r.on ? ' checked' : '') + '> 보내기 전에 한 번 더 생각하게 하기</label>' +
       '<div class="row" style="flex-wrap:nowrap;gap:10px"><div style="flex:1"><label class="f" for="rk">기준 종류</label><select class="in" id="rk"><option value="sentence"' + (r.kind === 'sentence' ? ' selected' : '') + '>문장 수</option><option value="char"' + (r.kind === 'char' ? ' selected' : '') + '>글자 수</option></select></div><div style="flex:1"><label class="f" for="rm">최소</label><input class="in" id="rm" type="number" min="1" max="2000" value="' + r.min + '"></div></div>' +
       '<label class="f" for="rq">아이들에게 보여 줄 생각 질문 (한 줄에 하나, 5개까지)</label><textarea class="in" id="rq">' + esc(r.questions.join('\n')) + '</textarea>' +
-      '<p class="muted">기준에 못 미쳐도 아이는 그대로 보낼 수 있어요. 승인 화면에 "기준보다 짧음" 표시만 붙습니다.</p><button class="btn wide" type="submit">저장</button></form>' +
-      '<div class="stack" style="flex:1 1 320px;min-width:0"><div class="card"><strong style="font-size:17px">현황판</strong><label class="row" style="min-height:44px;font-weight:700;margin-top:6px"><input type="checkbox" id="sn" style="width:22px;height:22px"' + (d.settings.showNames ? ' checked' : '') + '> 친구 이름과 권수 보이기</label><p class="muted">끄면 현황판에는 우리 반 전체 책탑만 보여요.</p></div>' +
-      '<div class="card"><strong style="font-size:17px">학생에게 알려 줄 주소</strong><input class="in" id="lk" readonly value="' + esc(link) + '" style="margin-top:8px"><button class="btn line small" type="button" id="cp" style="margin-top:8px">주소 복사</button></div>' +
-      '<form class="card" id="pf"><strong style="font-size:17px">선생님 비밀번호 바꾸기</strong>' + (APP.pwDefault ? '<p class="pill wait" style="margin:8px 0 0">아직 처음 비밀번호(1234)예요. 바꿔 주세요.</p>' : '') + '<label class="f" for="npw">새 비밀번호 (4자 이상)</label><input class="in" id="npw" type="password" autocomplete="new-password"><button class="btn line wide" type="submit" style="margin-top:10px">바꾸기</button></form>' +
-      '<div class="card"><a href="' + esc(d.sheetUrl) + '" target="_blank" rel="noopener">우리 반 시트 열기</a><p class="muted">껍데기 ' + d.shell + '판 · 화면 ' + APP.version + '</p><button class="btn line small" type="button" id="lo">로그아웃</button></div></div></div>';
+      '<p class="muted">기준에 못 미쳐도 아이는 그대로 보낼 수 있어요. 기록 승인 화면에 "기준보다 짧음" 표시만 붙습니다.</p><button class="btn" type="submit">저장</button></form>';
     $('#rf').onsubmit = function (ev) { ev.preventDefault(); act('setSettings', [{ rule: { on: $('#ron').checked, kind: $('#rk').value, min: Number($('#rm').value) || 1, questions: $('#rq').value.split(/\n/).map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 5) } }], '저장했어요.'); };
+  },
+  board: function (el, d) {
+    var link = location.origin + location.pathname + '?s=' + encodeURIComponent(APP.s);
+    el.innerHTML = '<div class="stack" style="max-width:560px"><div class="item"><label class="row" style="min-height:44px;font-weight:700"><input type="checkbox" id="sn" style="width:22px;height:22px"' + (d.settings.showNames ? ' checked' : '') + '> 현황판에 친구 이름과 권수 보이기</label><p class="muted" style="margin:0">끄면 현황판에는 우리 반 전체 책탑만 보여요.</p></div>' +
+      '<div class="item"><strong>학생에게 알려 줄 주소</strong><input class="in" id="lk" readonly value="' + esc(link) + '" style="margin-top:8px"><button class="btn line small" type="button" id="cp" style="margin-top:8px">주소 복사</button></div>' +
+      '<div class="item"><strong>우리 반 시트</strong><p class="muted" style="margin:4px 0 8px">학생 명단과 기록은 이 시트에 저장됩니다.</p><a class="btn line small" href="' + esc(d.sheetUrl) + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;text-decoration:none">시트 열기</a></div></div>';
     $('#sn').onchange = function () { act('setSettings', [{ showNames: $('#sn').checked }], '저장했어요.'); };
     $('#cp').onclick = function () { var i = $('#lk'); i.select(); (navigator.clipboard ? navigator.clipboard.writeText(i.value) : Promise.reject()).then(function () { toast('주소를 복사했어요.'); }, function () { toast('주소를 길게 눌러 복사해 주세요.'); }); };
+  },
+  pw: function (el) {
+    el.innerHTML = '<form id="pf" style="max-width:420px">' + (APP.pwDefault ? '<p class="pill wait" style="margin:0 0 8px">아직 처음 비밀번호(1234)예요. 바꿔 주세요.</p>' : '') + '<label class="f" for="npw" style="margin-top:0">새 비밀번호 (4자 이상)</label><input class="in" id="npw" type="password" autocomplete="new-password"><button class="btn" type="submit" style="margin-top:12px">바꾸기</button></form>';
     $('#pf').onsubmit = async function (ev) { ev.preventDefault(); var r2 = await guard(function () { return rpc('changeAdminPassword', [APP.token, $('#npw').value]); }); if (!r2) return; if (!r2.ok) { toast(r2.message); return; } APP.pwDefault = false; toast('비밀번호를 바꿨어요.'); render(); };
-    $('#lo').onclick = function () { APP.token = ''; try { sessionStorage.removeItem('ru_token|' + APP.s); } catch (e) {} go('home'); };
+  },
+  log: async function (el, d) {
+    el.innerHTML = '<p class="muted" style="margin-top:0">화면 ' + APP.version + ' · 껍데기 ' + d.shell + '판</p><div id="logl" class="stack"><span class="muted">불러오는 중이에요.</span></div>';
+    try {
+      var list = await (await fetch('changelog.json', { cache: 'no-cache' })).json();
+      if (!$('#logl')) return;
+      $('#logl').innerHTML = list.map(function (v, i) { return '<details class="item"' + (i === 0 ? ' open' : '') + '><summary><strong>' + esc(v.version) + '</strong> <span class="muted">' + esc(v.date) + '</span></summary><ul style="margin:8px 0 0;padding-left:20px">' + v.notes.map(function (n) { return '<li>' + esc(n) + '</li>'; }).join('') + '</ul></details>'; }).join('');
+    } catch (e) { if ($('#logl')) $('#logl').innerHTML = '<span class="muted">업데이트 내역을 불러오지 못했어요.</span>'; }
   }
 };
 

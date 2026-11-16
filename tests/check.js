@@ -49,6 +49,12 @@ if (!(shellVer >= need)) fail('껍데기 판(' + shellVer + ')이 화면이 요�
 if (!read('README.md').includes('껍데기 ' + shellVer + '판')) fail('README.md 의 껍데기 판 표기가 ' + shellVer + '판이 아님');
 pass('판 번호: 화면 ' + appVer + ' · 껍데기 ' + shellVer + '판');
 
+// 4-2. 앱 설치 파일
+try { new vm.Script(read('sw.js'), { filename: 'sw.js' }); } catch (e) { fail('sw.js 문법 오류: ' + e.message); }
+const mf = JSON.parse(read('manifest.webmanifest'));
+mf.icons.concat([{ src: 'icons/icon.svg' }, { src: 'icons/icon-dark.svg' }, { src: 'icons/apple-touch-icon.png' }]).forEach(i => { if (!fs.existsSync(path.join(root, i.src))) fail('아이콘 파일이 없음: ' + i.src); });
+pass('앱 설치 파일 (설명 파일·아이콘·서비스 워커)');
+
 // 5. 공개 저장소에 들어가면 안 되는 것
 JSON.parse(read('relay.json'));
 if (/KakaoAK [0-9a-f]{20,}/i.test(relay + html + shell)) fail('검색 열쇠가 코드에 들어 있음');

@@ -6,6 +6,13 @@
 <title>Read Us! 리더스</title>
 <meta name="description" content="읽은 책을 쌓아 우주까지 — 학급 독서기록장">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/icon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest" id="mf">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="theme-color" content="#F4EBDD">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="리더스">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
 <style>
@@ -109,6 +116,27 @@ summary:hover{color:#8E3A22}
 .shade.mid{align-items:center;padding:16px}
 .qrbox{background:var(--card);border-radius:24px;padding:26px 28px;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center;max-width:min(92vw,560px);max-height:94vh;overflow:auto}
 .qrimg{width:min(60vh,78vw,440px);height:auto;border-radius:12px;border:1px solid var(--line)}
+/* 목표 축하 */
+.conf{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:21}
+.conf i{position:absolute;top:-24px;width:12px;height:18px;border-radius:2px;animation:fall 2.6s linear forwards}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+@media (prefers-reduced-motion:reduce){.conf{display:none}}
+/* 인쇄: 독서기록장만 */
+#print{display:none}
+@media print{
+  body{background:#fff;color:#000}
+  .wrap,#modal,#toast{display:none!important}
+  #print{display:block;font-family:'Noto Sans KR','Malgun Gothic',sans-serif;font-size:11pt;line-height:1.5}
+  #print section{page-break-after:always;break-after:page}
+  #print section:last-child{page-break-after:auto;break-after:auto}
+  #print h1{font-family:'Gowun Batang',serif;font-size:20pt;margin:0 0 2pt}
+  #print .sum{margin:0 0 12pt;color:#333}
+  #print table{width:100%;border-collapse:collapse}
+  #print th,#print td{border:1px solid #888;padding:5pt 6pt;text-align:left;vertical-align:top}
+  #print th{background:#eee}
+  #print tr{break-inside:avoid;page-break-inside:avoid}
+  #print .n{white-space:pre-wrap;word-break:break-word}
+}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--card);padding:12px 18px;border-radius:12px;z-index:30;max-width:90vw;display:none}
 .foot{margin-top:28px;text-align:center;font-size:12px;color:var(--sub)}
 .note{white-space:pre-wrap;word-break:break-word;margin:0}
@@ -127,7 +155,8 @@ table.t td,table.t th{padding:8px 6px;border-bottom:1px solid var(--line);text-a
     <div class="row" id="nav"></div>
   </div>
   <main id="app" aria-live="polite"></main>
-  <p class="foot">Made by 음악적체육인 · 리더스 <span id="ver"></span></p>
+  <p class="foot"><button class="textlink" type="button" id="inst">앱으로 설치하기</button><br>Made by 음악적체육인 · 리더스 <span id="ver"></span></p>
+<div id="print"></div>
 </div>
 <div id="modal"></div>
 <script src="lib/qrcode.js"></script>
@@ -135,7 +164,7 @@ table.t td,table.t th{padding:8px 6px;border-bottom:1px solid var(--line);text-a
 <script>
 'use strict';
 var TEMPLATE_URL = 'https://docs.google.com/spreadsheets/d/1i-lr4aewTmhj4eJ-hfXgjxaPzflmMyLMn-aqUepZjls/copy';   // 껍데기가 들어 있는 견본 시트 (사본 만들기)
-var APP = { version: '0.4.0', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
+var APP = { version: '0.5.0', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
 
 /* ---------- 작은 도구 ---------- */
 function $(sel, root) { return (root || document).querySelector(sel); }
@@ -355,6 +384,7 @@ VIEWS.home = async function () {
     if (used.some(function (u) { return Math.abs(u - t) < 10; }) || t > 97) return;
     used.push(t); marks += '<div style="top:' + t.toFixed(1) + '%"><strong>' + esc(g.name) + ' · ' + heightText(g.m * 100 / d.bookCm, d.bookCm) + '</strong><span>지남</span></div>';
   });
+  celebrate(d, m);
   var side = '';
   if (d.classBooks.length) side += '<h2 style="font-size:19px">우리 반이 함께 읽는 책</h2>' + d.classBooks.map(function (c) { return classBookCard(c); }).join('');
   if (d.ranks) {
@@ -369,6 +399,23 @@ VIEWS.home = async function () {
     '<strong>' + (left > 0 ? esc(goal.name) + '까지 ' + left + '권 남았어요' : esc(goal.name) + '에 닿았어요') + '</strong></div>' +
     '<div class="grid2"><div class="tower">' + towerSvg(fill, d.recent.map(function (r) { return r.title; })) + compareSvg(goal) + '<div class="marks">' + marks + '</div></div><div class="side">' + side + '</div></div>';
 };
+
+/* ---------- 목표에 닿았을 때 축하 (기기마다 한 번) ---------- */
+function celebrate(d, m) {
+  var reached = GOALS.filter(function (g) { return m >= g.m; }).length, key = 'ru_goal|' + APP.s, prev = null;
+  try { prev = localStorage.getItem(key); localStorage.setItem(key, String(reached)); } catch (e) { return; }
+  if (prev === null || reached <= Number(prev) || !reached) return;
+  var g = GOALS[reached - 1], next = GOALS[reached], conf = '';
+  for (var i = 0; i < 36; i++) conf += '<i style="left:' + (i * 2.8 + (i % 3)) + '%;background:' + BOOKC[i % 6] + ';animation-delay:' + ((i * 37) % 900) + 'ms;animation-duration:' + (2200 + (i * 53) % 1200) + 'ms"></i>';
+  setTimeout(function () {
+    if ((location.hash || '#home') !== '#home' || $('#modal').innerHTML) return;
+    $('#modal').innerHTML = '<div class="conf" aria-hidden="true">' + conf + '</div><div class="shade mid" id="cels"><div class="qrbox" role="dialog" aria-labelledby="celt"><span class="pill">목표 달성</span><h2 id="celt" style="font-size:28px">' + esc(g.name) + '에 닿았어요</h2><p style="margin:0;font-size:17px">우리 반이 함께 <b>' + d.total + '권</b>, ' + heightText(d.total, d.bookCm) + '를 쌓았어요.</p>' +
+      (next ? '<p class="muted" style="margin:0">다음 목표는 ' + esc(next.name) + ' (' + heightText(next.m * 100 / d.bookCm, d.bookCm) + ')</p>' : '') + '<button class="btn" type="button" id="celx">좋아요</button></div></div>';
+    $('#celx').onclick = function () { $('#modal').innerHTML = ''; };
+    $('#cels').onclick = function (ev) { if (ev.target === ev.currentTarget) $('#modal').innerHTML = ''; };
+    $('#celx').focus();
+  }, 500);
+}
 
 /* ---------- 책 검색 (중계기) ---------- */
 async function searchBooks(q) {
@@ -506,7 +553,7 @@ async function enter(id, pw) {
 
 /* ---------- 선생님 메뉴 ---------- */
 var ADMIN = { tab: 'approve', data: null };
-var ADMIN_MENU = [['approve', '기록 승인'], ['class', '학급 도서'], ['students', '학생 관리'], ['register', '학생 등록'], ['rule', '감상 기준'], ['board', '현황판 · 주소'], ['pw', '비밀번호 · 초기화'], ['log', '업데이트 내역']];
+var ADMIN_MENU = [['approve', '기록 승인'], ['records', '독서 기록'], ['class', '학급 도서'], ['students', '학생 관리'], ['register', '학생 등록'], ['rule', '감상 기준'], ['board', '현황판 · 주소'], ['pw', '비밀번호 · 초기화'], ['log', '업데이트 내역']];
 function adminOut() { APP.token = ''; try { sessionStorage.removeItem('ru_token|' + APP.s); } catch (e) {} }
 VIEWS.admin = async function () {
   var app = $('#app');
@@ -560,6 +607,26 @@ async function refreshAdminQuietly() {
     if (before !== now && location.hash === '#admin' && ADMIN.tab === 'approve' && !$('#modal').innerHTML) drawAdmin();
   } catch (e) {}
 }
+// 기록 고치기 (선생님) — 제목 오타 등
+function editBook(b) {
+  $('#modal').innerHTML = '<div class="shade"><form class="sheet" id="edf"><h2>기록 고치기</h2><label class="f" for="edt">책 제목</label><input class="in" id="edt" maxlength="100" required autocomplete="off"><div class="row" style="flex-wrap:nowrap;gap:10px"><div style="flex:1"><label class="f" for="eda">지은이</label><input class="in" id="eda" maxlength="60" autocomplete="off"></div><div style="flex:1"><label class="f" for="edp">출판사</label><input class="in" id="edp" maxlength="60" autocomplete="off"></div></div><label class="f" for="edd">읽은 날</label><input class="in" id="edd" type="date"><label class="f" for="edn">감상</label><textarea class="in" id="edn" maxlength="2000" style="min-height:140px"></textarea><button class="btn wide" type="submit">저장</button><button class="btn line wide" type="button" id="edx">취소</button></form></div>';
+  $('#edt').value = b.title; $('#eda').value = b.author; $('#edp').value = b.publisher; $('#edd').value = b.date; $('#edn').value = b.note;
+  $('#edt').focus(); $('#edx').onclick = function () { $('#modal').innerHTML = ''; };
+  $('#edf').onsubmit = function (ev) { ev.preventDefault(); act('updateBookAdmin', [b.rid, { title: $('#edt').value, author: $('#eda').value, publisher: $('#edp').value, date: $('#edd').value, note: $('#edn').value }], '고쳤어요.'); };
+}
+// 독서기록장 인쇄: 승인된 기록만, 학생마다 한 쪽씩
+function printRecords(d, students) {
+  var cm = APP.ping.bookCm, cls = classTitle($('#cls').textContent), html = '';
+  students.forEach(function (s) {
+    var list = d.books.filter(function (b) { return b.sid === s.id && b.status === 'approved'; });
+    html += '<section><h1>' + esc(s.name) + '의 독서기록장</h1><p class="sum">' + esc(cls) + ' · ' + esc(s.grade) + '학년 ' + esc(s.cls) + '반 ' + esc(s.number) + '번 · 모두 ' + list.length + '권 (책탑 ' + heightText(list.length, cm) + ')</p>' +
+      (list.length ? '<table><thead><tr><th style="width:6%">번호</th><th style="width:13%">읽은 날</th><th style="width:27%">책</th><th>감상</th></tr></thead><tbody>' + list.map(function (b, i) {
+        return '<tr><td>' + (i + 1) + '</td><td>' + esc(b.date) + '</td><td><b>' + esc(b.title) + '</b><br>' + esc([b.author, b.publisher].filter(Boolean).join(' · ')) + '</td><td class="n">' + esc(b.note) + '</td></tr>';
+      }).join('') + '</tbody></table>' : '<p>아직 승인된 기록이 없어요.</p>') + '</section>';
+  });
+  $('#print').innerHTML = html;
+  window.print();
+}
 function stuName(d, sid) { var s = d.students.filter(function (x) { return x.id === sid; })[0]; return s ? s.number + '번 ' + s.name : '(지워진 학생)'; }
 async function act(fn, args, msg) { var r = await guard(function () { return rpc(fn, [APP.token].concat(args)); }); if (r) { if (msg) toast(msg); render(); } return r; }
 var ADMIN_TABS = {
@@ -570,18 +637,48 @@ var ADMIN_TABS = {
         return '<div class="item stack" data-rid="' + esc(b.rid) + '"><div class="row" style="justify-content:space-between"><strong style="font-size:17px">' + esc(b.title) + '</strong><span class="muted">' + esc(stuName(d, b.sid)) + ' · ' + esc(b.date) + '</span></div>' +
           '<span class="muted">' + esc([b.author, b.publisher].filter(Boolean).join(' · ')) + (b.classBookId ? ' · 함께 읽는 책' : '') + '</span><p class="note">' + (b.note ? esc(b.note) : '<span class="muted">(감상을 적지 않았어요)</span>') + '</p>' +
           (short ? '<div><span class="pill wait">기준보다 짧음 (' + rule.min + unit + ' 이상)</span></div>' : '') +
-          '<div class="row"><button class="btn small" type="button" data-ok>승인 (+1권)</button><button class="btn line small" type="button" data-back>다시 써 오기</button><button class="btn line small" type="button" data-del>지우기</button></div></div>';
+          '<div class="row"><button class="btn small" type="button" data-ok>승인 (+1권)</button><button class="btn line small" type="button" data-back>다시 써 오기</button>' + (d.shell >= 2 ? '<button class="btn line small" type="button" data-ed>고치기</button>' : '') + '<button class="btn line small" type="button" data-del>지우기</button></div></div>';
       }).join('') + '</div>' : '<p class="muted">기다리는 기록이 없어요.</p>');
     if (pend.length) $('#all').onclick = function () { act('approveBooks', [pend.map(function (b) { return b.rid; })], pend.length + '권을 승인했어요.'); };
     el.querySelectorAll('[data-rid]').forEach(function (card) {
       var rid = card.dataset.rid;
       $('[data-ok]', card).onclick = function () { act('approveBooks', [[rid]], '승인했어요.'); };
+      if ($('[data-ed]', card)) $('[data-ed]', card).onclick = function () { editBook(pend.filter(function (b) { return b.rid === rid; })[0]); };
       $('[data-del]', card).onclick = function () { if (confirm('이 기록을 지울까요? 되돌릴 수 없어요.')) act('deleteBook', [rid], '지웠어요.'); };
       $('[data-back]', card).onclick = function () {
         $('#modal').innerHTML = '<div class="shade"><form class="sheet" id="bk"><h2>다시 써 오기</h2><label class="f" for="memo">아이에게 남길 말 (비워 두어도 돼요)</label><input class="in" id="memo" maxlength="200" autocomplete="off"><button class="btn wide" type="submit">돌려보내기</button><button class="btn line wide" type="button" id="bkx">취소</button></form></div>';
         $('#memo').focus(); $('#bkx').onclick = function () { $('#modal').innerHTML = ''; };
         $('#bk').onsubmit = function (ev) { ev.preventDefault(); act('returnBook', [rid, $('#memo').value], '돌려보냈어요.'); };
       };
+    });
+  },
+  records: function (el, d) {
+    var cm = APP.ping.bookCm, sid = ADMIN.recSid || '', cnt = {};
+    d.books.forEach(function (b) { if (b.status === 'approved') cnt[b.sid] = (cnt[b.sid] || 0) + 1; });
+    if (sid && !d.students.some(function (s) { return s.id === sid; })) sid = ADMIN.recSid = '';
+    var head = '<div class="row" style="margin-bottom:14px"><label for="rsel" style="font-weight:700">학생</label><select class="in" id="rsel" style="width:auto;flex:1 1 180px;max-width:280px"><option value="">우리 반 전체</option>' +
+      d.students.map(function (s) { return '<option value="' + esc(s.id) + '"' + (s.id === sid ? ' selected' : '') + '>' + esc(s.number + '번 ' + s.name) + ' (' + (cnt[s.id] || 0) + '권)</option>'; }).join('') + '</select><button class="btn" type="button" id="rprint">인쇄 · PDF 저장</button></div>';
+    var body;
+    if (!sid) {
+      body = d.students.length ? '<table class="t"><thead><tr><th>번호</th><th>이름</th><th>승인된 책</th><th>책탑</th><th></th></tr></thead><tbody>' + d.students.map(function (s) {
+        return '<tr><td>' + esc(s.number) + '</td><td>' + esc(s.name) + '</td><td>' + (cnt[s.id] || 0) + '권</td><td>' + heightText(cnt[s.id] || 0, cm) + '</td><td><button class="btn line small" type="button" data-see="' + esc(s.id) + '">기록 보기</button></td></tr>';
+      }).join('') + '</tbody></table><p class="muted">"인쇄 · PDF 저장"을 누르면 학생마다 한 쪽씩 독서기록장이 나옵니다. 승인된 기록만 들어가요.</p>' : '<p class="muted">아직 등록된 학생이 없어요.</p>';
+    } else {
+      var list = d.books.filter(function (b) { return b.sid === sid; }).reverse();
+      body = list.length ? '<div class="stack">' + list.map(function (b) {
+        var p = b.status === 'approved' ? '<span class="pill ok">승인됨</span>' : b.status === 'returned' ? '<span class="pill back">다시 써 오기</span>' : '<span class="pill wait">승인 대기</span>';
+        return '<div class="item stack" data-rec="' + esc(b.rid) + '"><div class="row" style="justify-content:space-between"><strong style="font-size:16px">' + esc(b.title) + '</strong><span class="row"><span class="muted">' + esc(b.date) + '</span>' + p + '</span></div><span class="muted">' + esc([b.author, b.publisher].filter(Boolean).join(' · ')) + (b.classBookId ? ' · 함께 읽는 책' : '') + '</span><p class="note">' + (b.note ? esc(b.note) : '<span class="muted">(감상을 적지 않았어요)</span>') + '</p>' +
+          '<div class="row">' + (d.shell >= 2 ? '<button class="btn line small" type="button" data-ed>고치기</button>' : '') + '<button class="btn line small" type="button" data-del>지우기</button></div></div>';
+      }).join('') + '</div>' : '<p class="muted">아직 기록이 없어요.</p>';
+    }
+    el.innerHTML = head + body;
+    $('#rsel').onchange = function () { ADMIN.recSid = $('#rsel').value; drawAdmin(); };
+    $('#rprint').onclick = function () { printRecords(d, sid ? d.students.filter(function (s) { return s.id === sid; }) : d.students); };
+    el.querySelectorAll('[data-see]').forEach(function (b) { b.onclick = function () { ADMIN.recSid = b.dataset.see; drawAdmin(); }; });
+    el.querySelectorAll('[data-rec]').forEach(function (card) {
+      var rid = card.dataset.rec, b = d.books.filter(function (x) { return x.rid === rid; })[0];
+      if ($('[data-ed]', card)) $('[data-ed]', card).onclick = function () { editBook(b); };
+      $('[data-del]', card).onclick = function () { if (confirm('이 기록을 지울까요? 승인된 기록이면 책탑에서도 빠져요.')) act('deleteBook', [rid], '지웠어요.'); };
     });
   },
   class: function (el, d) {
@@ -693,11 +790,29 @@ async function start() {
     APP.ping = got[0]; APP.settings = got[1];
   } catch (e) { connectScreen('학교 시트와 연결하지 못했어요. 주소를 다시 확인해 주세요. (' + (e.message || e) + ')'); return; }
   try { localStorage.setItem('ru_shell', s); APP.token = sessionStorage.getItem('ru_token|' + s) || ''; } catch (e) {}
+  // 주소에 학교 시트가 빠져 있으면 채워 둠 — 홈 화면에 추가하거나 주소를 복사해도 우리 반으로 열리게
+  if (!q.get('s')) { try { history.replaceState(null, '', location.pathname + '?s=' + encodeURIComponent(s) + location.hash); } catch (e) {} }
   $('#cls').textContent = classTitle(APP.ping.title);
   if (APP.ping.shell < APP.requiredShell) toast('껍데기를 새 판으로 바꿔야 해요. 선생님께 알려 주세요.');
   try { var rj = await (await fetch('relay.json', { cache: 'no-cache' })).json(); if (/^https?:\/\//.test(rj.relay || '')) APP.relay = rj.relay; } catch (e) {}
   render();
 }
+/* ---------- 앱으로 설치 ---------- */
+var IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+// 아이폰·아이패드는 설치 설명 파일이 있으면 학교 주소(?s=)를 떼고 저장하므로, 지금 주소 그대로 저장되도록 설명 파일을 뺌
+if (IS_IOS && $('#mf')) $('#mf').remove();
+window.addEventListener('beforeinstallprompt', function (e) { e.preventDefault(); APP.install = e; });
+if (window.matchMedia('(display-mode: standalone)').matches || navigator.standalone) $('#inst').style.display = 'none';
+$('#inst').onclick = function () {
+  var how = APP.install ? '<button class="btn wide" type="button" id="insgo">지금 설치하기</button>'
+    : IS_IOS ? '<ol style="margin:0;padding-left:20px;text-align:left"><li>Safari 아래쪽의 <b>공유</b> 단추를 누릅니다.</li><li><b>홈 화면에 추가</b>를 누릅니다.</li><li>오른쪽 위 <b>추가</b>를 누르면 리더스 아이콘이 생깁니다.</li></ol>'
+    : '<ol style="margin:0;padding-left:20px;text-align:left"><li>브라우저 오른쪽 위 <b>메뉴(점 세 개)</b>를 누릅니다.</li><li><b>홈 화면에 추가</b> 또는 <b>앱 설치</b>를 누릅니다.</li><li>컴퓨터에서는 주소 칸 오른쪽의 설치 아이콘을 눌러도 됩니다.</li></ol>';
+  $('#modal').innerHTML = '<div class="shade mid" id="inss"><div class="qrbox" role="dialog" aria-labelledby="inst1"><img src="icons/icon-192.png" alt="" width="84" height="84" style="border-radius:20px"><h2 id="inst1">리더스를 앱처럼 쓰기</h2><p style="margin:0">홈 화면에 아이콘을 만들어 두면 QR을 찍지 않고 바로 우리 반으로 들어와요.</p>' + how + '<button class="btn line wide" type="button" id="insx">닫기</button></div></div>';
+  $('#insx').onclick = function () { $('#modal').innerHTML = ''; };
+  $('#inss').onclick = function (ev) { if (ev.target === ev.currentTarget) $('#modal').innerHTML = ''; };
+  if ($('#insgo')) $('#insgo').onclick = function () { var p = APP.install; APP.install = null; $('#modal').innerHTML = ''; if (p) p.prompt(); };
+};
+try { if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js'); } catch (e) {}
 start();
 </script>
 </body>

@@ -30,6 +30,7 @@ try:
         pg.on('pageerror', lambda e: errors.append('JS: ' + str(e)))
         pg.on('console', lambda m: errors.append('console: ' + m.text) if m.type == 'error' and 'fonts.g' not in m.text and 'favicon' not in m.text and 'ERR_' not in m.text else None)
         pg.on('dialog', lambda d: d.accept())
+        pg.add_init_script('window.print = function () { window.__printed = (window.__printed || 0) + 1; };')
         posts = []; pg.on('request', lambda r: posts.append(r.url) if r.method == 'POST' and r.url.endswith('/exec') else None)
         def toast(): return pg.locator('#toast').inner_text()
         def state(): return json.load(urllib.request.urlopen(BASE + '/__state'))['sheets']
@@ -51,7 +52,7 @@ try:
         pg.click('[data-go=admin]'); pg.fill('#apw', '0000'); pg.click('#lg button[type=submit]'); pg.wait_for_timeout(300)
         ok('틀린 비밀번호는 막힘', '올바르지' in toast())
         pg.fill('#apw', '1234'); pg.click('#lg button[type=submit]'); pg.wait_for_selector('.menu')
-        ok('선생님 로그인 → 메뉴 8개', pg.locator('.mi').count() == 8)
+        ok('선생님 로그인 → 메뉴 9개', pg.locator('.mi').count() == 9)
 
         # 3. 학생 등록
         pg.click('[data-tab=register]'); pg.fill('#bt', '5 1 1 김하늘\n5\t1\t2\t이도윤\n5,1,3,박서연'); pg.click('#bulk button[type=submit]')
@@ -90,6 +91,9 @@ try:
         ok('승인 전에는 책탑에 안 쌓임', '0권' in pg.inner_text('h1.headline'))
         pg.click('[data-go=admin]'); pg.wait_for_selector('[data-rid]')
         ok('승인 대기 2건, 짧은 감상 표시 1건', pg.locator('[data-rid]').count() == 2 and pg.locator('text=기준보다 짧음').count() == 1)
+        pg.locator('[data-rid]').first.locator('[data-ed]').click(); pg.fill('#edt', '마당을 나온 암탉'); pg.click('#edf button[type=submit]')
+        pg.wait_for_function("document.querySelector('[data-rid] strong').textContent === '마당을 나온 암탉'")
+        ok('승인 화면에서 기록 고치기', state()['Books'][1][4] == '마당을 나온 암탉')
         pg.locator('[data-rid]').first.locator('[data-ok]').click(); pg.wait_for_function("document.querySelectorAll('[data-rid]').length === 1")
         pg.locator('[data-rid]').first.locator('[data-back]').click(); pg.fill('#memo', '어떤 점이 좋았는지 더 써 볼까요?'); pg.click('#bk button[type=submit]')
         pg.wait_for_function("document.querySelectorAll('[data-rid]').length === 0")
@@ -113,6 +117,17 @@ try:
         pg.click('[data-go=home]'); pg.wait_for_selector('.tower svg')
         ok('고쳐 쓴 기록 승인 → 2권 · 0.6m', '2권 · 0.6m' in pg.inner_text('h1.headline'))
         ok('학급 도서 진행 1명', '3명 중 1명' in pg.inner_text('.side'))
+
+        # 8-2. 독서 기록 보기·인쇄
+        pg.click('[data-go=admin]'); pg.wait_for_selector('.menu'); pg.click('[data-tab=records]'); pg.wait_for_selector('#rsel')
+        ok('독서 기록: 우리 반 전체 표', pg.locator('#pane table.t tbody tr').count() == 3 and '1권' in pg.inner_text('#pane'))
+        pg.locator('[data-see]').first.click(); pg.wait_for_selector('[data-rec]')
+        ok('독서 기록: 학생별 기록과 감상', '마당을 나온 암탉' in pg.inner_text('#pane') and '잎싹이 용감했다' in pg.inner_text('#pane'))
+        pg.click('#rprint'); pg.wait_for_timeout(200)
+        ok('독서기록장 인쇄 (한 학생)', pg.evaluate('window.__printed') == 1 and pg.locator('#print section').count() == 1 and '김하늘의 독서기록장' in pg.evaluate("document.querySelector('#print').textContent"))
+        pg.select_option('#rsel', ''); pg.wait_for_selector('[data-see]'); pg.click('#rprint'); pg.wait_for_timeout(200)
+        ok('독서기록장 인쇄 (우리 반 전체, 학생마다 한 쪽)', pg.locator('#print section').count() == 3)
+        pg.click('[data-go=home]'); pg.wait_for_selector('.tower svg')
 
         # 9. 설정: 감상 기준 글자 수, 이름 가리기
         pg.click('[data-go=admin]'); pg.wait_for_selector('.menu'); pg.click('[data-tab=rule]')
@@ -143,7 +158,7 @@ try:
         pg.click('#lo'); pg.wait_for_selector('h1.headline'); pg.click('[data-go=admin]'); pg.fill('#apw', '1234'); pg.click('#lg button[type=submit]'); pg.wait_for_timeout(300)
         ok('비밀번호를 바꾸면 옛 비밀번호는 막힘', pg.locator('.menu').count() == 0)
         pg.fill('#apw', 'abcd'); pg.click('#lg button[type=submit]'); pg.wait_for_selector('.menu')
-        ok('새 비밀번호로 로그인', pg.locator('.mi').count() == 8)
+        ok('새 비밀번호로 로그인', pg.locator('.mi').count() == 9)
         pg.click('[data-go=home]'); pg.wait_for_selector('h1.headline'); pg.click('[data-go=student]'); pg.wait_for_selector('#rec')
 
         # 10-3. 껍데기 2판 기능: 학급 이름, 승인 전 기록 지우기, 기록 고치기, 저장칸, 초기화
@@ -172,7 +187,18 @@ try:
         ok('초기화는 "지우기"를 적어야 함', len(state()['Books']) > 1)
         pg.fill('#rsw', '지우기'); pg.click('#rsf button[type=submit]'); pg.wait_for_function("!document.querySelector('.shade')"); pg.wait_for_timeout(300)
         ok('책 기록 초기화 (학생·학급 도서는 남음)', len(state()['Books']) == 1 and len(state()['Students']) == 4 and len(state()['ClassBooks']) == 2)
-        pg.click('[data-go=home]'); pg.wait_for_selector('h1.headline'); pg.click('[data-go=student]'); pg.wait_for_selector('#rec')
+        # 10-4. 목표 축하: 10권(3m)이 되면 교실 천장
+        sid2 = state()['Students'][2][0]
+        rids = [call('addBook', sid2, '', {'title': f'책 {i}', 'note': '가'})['result']['rid'] for i in range(10)]
+        pg.click('[data-go=home]'); pg.wait_for_selector('h1.headline'); pg.wait_for_timeout(800)
+        ok('승인 전에는 축하가 뜨지 않음', pg.locator('#celt').count() == 0)
+        call('approveBooks', tok, rids); pg.reload(); pg.wait_for_selector('#celt')
+        ok('목표에 닿으면 축하', '교실 천장에 닿았어요' in pg.inner_text('.qrbox') and '10권' in pg.inner_text('.qrbox') and '학교 4층' in pg.inner_text('.qrbox'))
+        pg.click('#celx'); pg.reload(); pg.wait_for_selector('.tower svg'); pg.wait_for_timeout(900)
+        ok('축하는 한 번만', pg.locator('#celt').count() == 0)
+        pg.click('#inst'); pg.wait_for_selector('#insx'); ok('앱으로 설치하기 안내', '홈 화면' in pg.inner_text('.qrbox')); pg.click('#insx')
+        ok('설치 설명 파일이 열림', json.load(urllib.request.urlopen(BASE + '/readus/manifest.webmanifest'))['short_name'] == '리더스')
+        pg.click('[data-go=student]'); pg.wait_for_selector('.name'); pg.locator('.name', has_text='김하늘').click(); pg.wait_for_selector('#pw'); pg.fill('#pw', '4321'); pg.click('#pwf button[type=submit]'); pg.wait_for_selector('#rec')
 
         # 11. 새로 고쳐도 이어지는지, 좁은 화면
         pg.reload(); pg.wait_for_selector('.name, #rec')

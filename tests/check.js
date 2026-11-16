@@ -17,7 +17,8 @@ const shell = read('Shell.gs'), relay = read('Relay.gs'), html = read('index.htm
 const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
 if (!scripts.length) fail('index.html 에 스크립트가 없음');
 scripts.forEach((src, i) => { try { new vm.Script(src, { filename: 'index.html#' + i }); pass('index.html 스크립트 문법'); } catch (e) { fail('index.html 스크립트 문법 오류: ' + e.message); } });
-if ((html.match(/<script>/g) || []).length !== (html.match(/<\/script>/g) || []).length) fail('index.html <script> 짝이 안 맞음');
+if ((html.match(/<script\b/g) || []).length !== (html.match(/<\/script>/g) || []).length) fail('index.html <script> 짝이 안 맞음');
+[...html.matchAll(/<script src="([^"]+)"/g)].forEach(m => { if (!/^https?:/.test(m[1]) && !fs.existsSync(path.join(root, m[1]))) fail('불러오는 파일이 저장소에 없음: ' + m[1]); });
 
 // 2. 화면이 부르는 함수가 껍데기에 있고, 허용 목록에도 있는지
 const allow = (shell.match(/const RPC_ALLOW_ = \[([\s\S]*?)\];/) || [, ''])[1].match(/'[^']+'/g).map(s => s.slice(1, -1));

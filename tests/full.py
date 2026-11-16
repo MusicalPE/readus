@@ -39,6 +39,14 @@ try:
         ok('처음 화면: 0권으로 열림', '0권' in pg.inner_text('h1.headline'))
         ok('학급 이름 표시', '햇살초' in pg.inner_text('#cls'))
 
+        # 1-2. 접속 QR
+        pg.click('#qr'); pg.wait_for_selector('.qrimg')
+        dark = pg.evaluate("(document.querySelector('.qrimg path').getAttribute('d').match(/M/g) || []).length")
+        ok('접속 QR 이 그려짐', dark > 300 and '들어오기' in pg.inner_text('.qrbox'), f'점 {dark}개')
+        import re as _re
+        ok('QR 주소는 학생 화면으로 바로 감', pg.evaluate('studentLink()').endswith('#student') and 'exec' in urllib.request.unquote(pg.evaluate('studentLink()')))
+        pg.click('#qrx'); ok('QR 닫기', pg.locator('.shade').count() == 0)
+
         # 2. 선생님 로그인 (틀린 비밀번호 → 맞는 비밀번호)
         pg.click('[data-go=admin]'); pg.fill('#apw', '0000'); pg.click('#lg button[type=submit]'); pg.wait_for_timeout(300)
         ok('틀린 비밀번호는 막힘', '올바르지' in toast())
@@ -110,7 +118,8 @@ try:
         pg.click('[data-go=admin]'); pg.wait_for_selector('.menu'); pg.click('[data-tab=rule]')
         pg.select_option('#rk', 'char'); pg.fill('#rm', '30'); pg.click('#rf button[type=submit]'); pg.wait_for_timeout(400)
         pg.click('[data-tab=rule]'); ok('감상 기준 저장 (글자 수 30)', pg.input_value('#rm') == '30' and pg.input_value('#rk') == 'char')
-        pg.click('[data-tab=board]'); pg.wait_for_selector('#sn'); pg.uncheck('#sn'); pg.wait_for_timeout(500)
+        pg.click('[data-tab=board]'); pg.wait_for_selector('#sn'); pg.click('#bq'); pg.wait_for_selector('.qrimg'); ok('선생님 메뉴에서도 QR 크게 보기', True); pg.click('#qrx')
+        pg.uncheck('#sn'); pg.wait_for_timeout(500)
         pg.click('[data-go=home]'); pg.wait_for_selector('.tower svg')
         ok('이름 가리기: 현황판에 이름 없음', '김하늘' not in pg.inner_text('#app') and '2권' in pg.inner_text('h1.headline'))
 

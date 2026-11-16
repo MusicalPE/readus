@@ -106,6 +106,9 @@ summary:hover{color:#8E3A22}
 .q{min-height:44px;text-align:left;padding:8px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
 .found{display:flex;gap:12px;align-items:center;text-align:left;width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
 .found img,.found .noimg{flex:0 0 34px;width:34px;height:46px;border-radius:3px;object-fit:cover;background:var(--soft)}
+.shade.mid{align-items:center;padding:16px}
+.qrbox{background:var(--card);border-radius:24px;padding:26px 28px;display:flex;flex-direction:column;gap:14px;align-items:center;text-align:center;max-width:min(92vw,560px);max-height:94vh;overflow:auto}
+.qrimg{width:min(60vh,78vw,440px);height:auto;border-radius:12px;border:1px solid var(--line)}
 #toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--card);padding:12px 18px;border-radius:12px;z-index:30;max-width:90vw;display:none}
 .foot{margin-top:28px;text-align:center;font-size:12px;color:var(--sub)}
 .note{white-space:pre-wrap;word-break:break-word;margin:0}
@@ -127,11 +130,12 @@ table.t td,table.t th{padding:8px 6px;border-bottom:1px solid var(--line);text-a
   <p class="foot">Made by 음악적체육인 · 리더스 <span id="ver"></span></p>
 </div>
 <div id="modal"></div>
+<script src="lib/qrcode.js"></script>
 <div id="toast" role="status"></div>
 <script>
 'use strict';
 var TEMPLATE_URL = 'https://docs.google.com/spreadsheets/d/1i-lr4aewTmhj4eJ-hfXgjxaPzflmMyLMn-aqUepZjls/copy';   // 껍데기가 들어 있는 견본 시트 (사본 만들기)
-var APP = { version: '0.3.0', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
+var APP = { version: '0.4.0', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
 
 /* ---------- 작은 도구 ---------- */
 function $(sel, root) { return (root || document).querySelector(sel); }
@@ -181,8 +185,9 @@ function render() {
   $('#modal').innerHTML = '';
   var nav = $('#nav');
   nav.innerHTML = v === 'home'
-    ? '<button class="btn" type="button" data-go="student">책 기록하기</button><button class="btn line" type="button" data-go="admin">선생님</button>'
+    ? '<button class="btn line" type="button" id="qr">접속 QR</button><button class="btn" type="button" data-go="student">책 기록하기</button><button class="btn line" type="button" data-go="admin">선생님</button>'
     : (v === 'admin' && APP.token) ? '' : '<button class="btn line" type="button" data-go="home">현황판</button>';
+  if ($('#qr')) $('#qr').onclick = showQr;
   VIEWS[v]();
 }
 document.addEventListener('click', function (ev) {
@@ -191,6 +196,26 @@ document.addEventListener('click', function (ev) {
 });
 $('#home').addEventListener('click', function () { go('home'); });
 window.addEventListener('hashchange', render);
+
+/* ---------- 접속 QR (학생 휴대폰으로 찍어 바로 들어오기) ---------- */
+function studentLink() { return location.origin + location.pathname + '?s=' + encodeURIComponent(APP.s) + '#student'; }
+function qrSvg(text) {
+  if (typeof qrcode !== 'function') return '';
+  var q = qrcode(0, 'M'); q.addData(text); q.make();
+  var n = q.getModuleCount(), m = 3, d = '';
+  for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) if (q.isDark(r, c)) d += 'M' + (c + m) + ' ' + (r + m) + 'h1v1h-1z';
+  return '<svg class="qrimg" viewBox="0 0 ' + (n + m * 2) + ' ' + (n + m * 2) + '" role="img" aria-label="접속 QR" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#FFFFFF"/><path d="' + d + '" fill="#3E2C20"/></svg>';
+}
+function showQr() {
+  var link = studentLink(), svg = qrSvg(link);
+  $('#modal').innerHTML = '<div class="shade mid" id="qrs"><div class="qrbox" role="dialog" aria-labelledby="qrt"><h2 id="qrt">' + esc(classTitle($('#cls').textContent) || '우리 반') + ' 리더스에 들어오기</h2><p style="margin:0">휴대폰 카메라로 찍으면 바로 이름 고르는 화면이 열려요.</p>' +
+    (svg || '<p class="muted">QR을 만들 도구를 불러오지 못했어요. 새로 고친 뒤 다시 눌러 주세요.</p>') +
+    '<div class="row" style="justify-content:center"><button class="btn line" type="button" id="qrc">주소 복사</button><button class="btn" type="button" id="qrx">닫기</button></div></div></div>';
+  $('#qrx').onclick = function () { $('#modal').innerHTML = ''; };
+  $('#qrs').onclick = function (ev) { if (ev.target === ev.currentTarget) $('#modal').innerHTML = ''; };
+  $('#qrc').onclick = function () { (navigator.clipboard ? navigator.clipboard.writeText(link) : Promise.reject()).then(function () { toast('주소를 복사했어요.'); }, function () { toast('주소 복사가 안 되는 기기예요. 선생님 메뉴의 주소 칸을 이용해 주세요.'); }); };
+  $('#qrx').focus();
+}
 
 /* ---------- 책탑 그림 ---------- */
 var BOOKC = ['#D2604A', '#E39A4A', '#E8B84E', '#5E9C8A', '#7E9BB8', '#B8566B', '#F2E6D0'];
@@ -617,10 +642,11 @@ var ADMIN_TABS = {
   board: function (el, d) {
     var link = location.origin + location.pathname + '?s=' + encodeURIComponent(APP.s);
     el.innerHTML = '<div class="stack" style="max-width:560px">' + (d.shell >= 2 ? '<form class="item" id="cnf"><label class="f" for="cn" style="margin-top:0">화면에 보일 학급 이름 (비우면 시트 이름을 씁니다)</label><div class="row" style="flex-wrap:nowrap"><input class="in" id="cn" maxlength="30" autocomplete="off" value="' + esc(d.settings.className || '') + '" placeholder="' + esc(classTitle(d.sheetName)) + '"><button class="btn small" type="submit" style="white-space:nowrap">저장</button></div></form>' : '') + '<div class="item"><label class="row" style="min-height:44px;font-weight:700"><input type="checkbox" id="sn" style="width:22px;height:22px"' + (d.settings.showNames ? ' checked' : '') + '> 현황판에 친구 이름과 권수 보이기</label><p class="muted" style="margin:0">끄면 현황판에는 우리 반 전체 책탑만 보여요.</p></div>' +
-      '<div class="item"><strong>학생에게 알려 줄 주소</strong><input class="in" id="lk" readonly value="' + esc(link) + '" style="margin-top:8px"><button class="btn line small" type="button" id="cp" style="margin-top:8px">주소 복사</button></div>' +
+      '<div class="item"><strong>학생에게 알려 줄 주소</strong><input class="in" id="lk" readonly value="' + esc(link) + '" style="margin-top:8px"><div class="row" style="margin-top:8px"><button class="btn line small" type="button" id="cp">주소 복사</button><button class="btn small" type="button" id="bq">접속 QR 크게 보기</button></div><p class="muted" style="margin:8px 0 0">현황판 오른쪽 위의 "접속 QR" 단추로도 언제든 띄울 수 있어요.</p></div>' +
       '<div class="item"><strong>우리 반 시트</strong><p class="muted" style="margin:4px 0 8px">학생 명단과 기록은 이 시트에 저장됩니다.</p><a class="btn line small" href="' + esc(d.sheetUrl) + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;text-decoration:none">시트 열기</a></div></div>';
     if ($('#cnf')) $('#cnf').onsubmit = function (ev) { ev.preventDefault(); act('setSettings', [{ className: $('#cn').value }], '학급 이름을 저장했어요.'); };
     $('#sn').onchange = function () { act('setSettings', [{ showNames: $('#sn').checked }], '저장했어요.'); };
+    $('#bq').onclick = showQr;
     $('#cp').onclick = function () { var i = $('#lk'); i.select(); (navigator.clipboard ? navigator.clipboard.writeText(i.value) : Promise.reject()).then(function () { toast('주소를 복사했어요.'); }, function () { toast('주소를 길게 눌러 복사해 주세요.'); }); };
   },
   pw: function (el) {

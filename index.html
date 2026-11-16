@@ -4,7 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Read Us! 리더스</title>
-<meta name="description" content="읽은 책을 쌓아 우주까지 — 학급 독서기록장">
+<meta name="description" content="읽은 책을 쌓아 우주까지. 학생이 책과 감상을 기록하고 선생님이 승인하면 우리 반 책탑이 쌓여요.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="리더스">
+<meta property="og:title" content="Read Us! 리더스 · 독서기록장">
+<meta property="og:description" content="읽은 책을 쌓아 우주까지. 학생 휴대폰으로 기록하고, 선생님이 승인하면 우리 반 책탑이 쌓여요.">
+<meta property="og:url" content="https://musicalpe.github.io/readus/">
+<meta property="og:image" content="https://musicalpe.github.io/readus/img/og-app.jpg?v=1">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="icon" href="icons/icon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="manifest.webmanifest" id="mf">
@@ -164,7 +173,7 @@ table.t td,table.t th{padding:8px 6px;border-bottom:1px solid var(--line);text-a
 <script>
 'use strict';
 var TEMPLATE_URL = 'https://docs.google.com/spreadsheets/d/1i-lr4aewTmhj4eJ-hfXgjxaPzflmMyLMn-aqUepZjls/copy';   // 껍데기가 들어 있는 견본 시트 (사본 만들기)
-var APP = { version: '0.5.0', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
+var APP = { version: '0.5.1', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
 
 /* ---------- 작은 도구 ---------- */
 function $(sel, root) { return (root || document).querySelector(sel); }

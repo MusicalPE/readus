@@ -4,7 +4,7 @@
 아이들이 읽은 책의 제목·지은이·출판사·감상을 적어 보내면, 선생님이 승인할 때마다 우리 반 책탑에 한 권(30cm)씩 쌓입니다.
 
 - 화면 주소: https://musicalpe.github.io/readus/
-- 지금 판: 화면 0.5.0 · 껍데기 2판
+- 지금 판: 화면 0.5.1 · 껍데기 2판
 
 ## 할 수 있는 것
 
@@ -51,6 +51,7 @@
 | `Relay.gs` | 책 검색 중계기. 운영자만 설치합니다. 학교에서는 설치하지 않습니다. |
 | `lib/qrcode.js` | 접속 QR 을 그리는 도구 (qrcode-generator, MIT) |
 | `manifest.webmanifest`, `sw.js`, `icons/` | 홈 화면·바탕화면에 앱으로 설치하기 위한 파일 |
+| `img/og-app.jpg` | 카카오톡·문자에 주소를 붙였을 때 보이는 그림 (원본은 `dev/og.html`) |
 | `relay.json` | 중계기 주소. 비어 있으면 책 찾기 칸이 보이지 않고 직접 적습니다. |
 | `changelog.json` | 판올림 내역 (맨 위가 최신) |
 | `dev/`, `tests/` | 시험 도구 |

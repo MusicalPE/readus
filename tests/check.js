@@ -54,6 +54,8 @@ try { new vm.Script(read('sw.js'), { filename: 'sw.js' }); } catch (e) { fail('s
 const mf = JSON.parse(read('manifest.webmanifest'));
 mf.icons.concat([{ src: 'icons/icon.svg' }, { src: 'icons/icon-dark.svg' }, { src: 'icons/apple-touch-icon.png' }]).forEach(i => { if (!fs.existsSync(path.join(root, i.src))) fail('아이콘 파일이 없음: ' + i.src); });
 pass('앱 설치 파일 (설명 파일·아이콘·서비스 워커)');
+const og = (html.match(/og:image" content="https:\/\/musicalpe\.github\.io\/readus\/([^"?]+)/) || [])[1];
+if (!og || !fs.existsSync(path.join(root, og))) fail('카카오톡 썸네일 그림이 없음: ' + og); else pass('카카오톡 썸네일 그림 ' + og);
 
 // 5. 공개 저장소에 들어가면 안 되는 것
 JSON.parse(read('relay.json'));

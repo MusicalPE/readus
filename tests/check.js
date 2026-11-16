@@ -56,6 +56,8 @@ mf.icons.concat([{ src: 'icons/icon.svg' }, { src: 'icons/icon-dark.svg' }, { sr
 pass('앱 설치 파일 (설명 파일·아이콘·서비스 워커)');
 const nb = ((html.match(/var BOOKS = \[(.*)\];/) || [])[1] || '').split('],[').length;
 for (let i = 1; i <= nb; i++) { const f = 'img/books/b' + String(i).padStart(2, '0') + '.webp'; if (!fs.existsSync(path.join(root, f))) fail('책 그림이 없음: ' + f); }
+Object.keys(eval('({' + ((html.match(/var CMP_W = \{(.*)\};/) || [])[1] || '') + '})')).forEach(k => { if (!fs.existsSync(path.join(root, 'img/cmp/' + k + '.webp'))) fail('비교 그림이 없음: ' + k); });
+[...html.matchAll(/img: '(\w+)'/g)].forEach(x => { if (!fs.existsSync(path.join(root, 'img/cmp/' + x[1] + '.webp'))) fail('목표가 쓰는 비교 그림이 없음: ' + x[1]); });
 if (nb !== 12) fail('책 그림 표가 12권이 아님: ' + nb); else pass('책 그림 12권');
 const og = (html.match(/og:image" content="https:\/\/musicalpe\.github\.io\/readus\/([^"?]+)/) || [])[1];
 if (!og || !fs.existsSync(path.join(root, og))) fail('카카오톡 썸네일 그림이 없음: ' + og); else pass('카카오톡 썸네일 그림 ' + og);

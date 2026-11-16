@@ -4,13 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Read Us! 리더스</title>
-<meta name="description" content="읽은 책을 쌓아 우주까지. 학생이 책과 감상을 기록하고 선생님이 승인하면 우리 반 책탑이 쌓여요.">
+<meta name="description" content="한 권 한 권 쌓아 내 키만큼, 교실 천장까지. 학생이 책과 감상을 기록하고 선생님이 승인하면 우리 반 책탑이 쌓여요.">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="리더스">
 <meta property="og:title" content="Read Us! 리더스 · 독서기록장">
-<meta property="og:description" content="읽은 책을 쌓아 우주까지. 학생 휴대폰으로 기록하고, 선생님이 승인하면 우리 반 책탑이 쌓여요.">
+<meta property="og:description" content="한 권 한 권 쌓아 내 키만큼, 교실 천장까지. 학생 휴대폰으로 기록하고, 선생님이 승인하면 우리 반 책탑이 쌓여요.">
 <meta property="og:url" content="https://musicalpe.github.io/readus/">
-<meta property="og:image" content="https://musicalpe.github.io/readus/img/og-app.jpg?v=1">
+<meta property="og:image" content="https://musicalpe.github.io/readus/img/og-app.jpg?v=2">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
@@ -70,9 +70,9 @@ img.cover{object-fit:cover;padding:0;border-left:0;display:block}
 /* 현황판 */
 .tower{flex:3 1 420px;background:var(--wood);color:var(--card);border-radius:20px;padding:24px;display:flex;gap:16px;justify-content:center;overflow:hidden}
 .tower svg{flex:none}
-.marks{position:relative;width:170px;min-width:120px;height:500px;flex:0 1 170px}
+.marks{position:relative;width:170px;min-width:150px;height:500px;flex:0 1 170px}
 .marks div{position:absolute;left:0;transform:translateY(-50%);display:flex;flex-direction:column;line-height:1.3}
-.marks strong{font-size:14px;color:var(--cream)}
+.marks strong{font-size:14px;color:var(--cream);white-space:nowrap}
 .marks span{font-size:12px;color:var(--cream)}
 .marks .goal strong{color:var(--mustard);font-size:15px}
 .marks .now strong{color:var(--card);font-size:17px}
@@ -178,7 +178,7 @@ table.t td,table.t th{padding:8px 6px;border-bottom:1px solid var(--line);text-a
 <script>
 'use strict';
 var TEMPLATE_URL = 'https://docs.google.com/spreadsheets/d/1i-lr4aewTmhj4eJ-hfXgjxaPzflmMyLMn-aqUepZjls/copy';   // 껍데기가 들어 있는 견본 시트 (사본 만들기)
-var APP = { version: '0.7.1', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
+var APP = { version: '0.8.0', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
 
 /* ---------- 작은 도구 ---------- */
 function $(sel, root) { return (root || document).querySelector(sel); }
@@ -195,11 +195,15 @@ function dueText(due) {
 }
 // 견본 시트의 사본은 이름 끝에 '의 사본'이 붙으므로 화면에서는 떼고 보여 줌
 function classTitle(t) { return String(t || '').replace(/\s*의 사본(\s*\(\d+\))?\s*$/, '').replace(/^Copy of\s+/i, '').trim(); }
-function heightText(count, cm) {
-  var m = count * cm / 100;
-  if (m >= 1000) return (Math.round(m / 10) / 100) + 'km';
-  return (Math.round(m * 10) / 10) + 'm';
+// 책 한 권 = 실제 두께쯤인 2cm 로 쌓음 (눕혀 쌓은 그림과 맞게). 껍데기가 알려 주는 옛 값(30)은 쓰지 않음
+var BOOK_CM = 2;
+function hText(cm) {
+  if (cm < 100) return Math.round(cm) + 'cm';
+  if (cm < 1000) { var m = Math.floor(cm / 100), r = Math.round(cm - m * 100); return r ? m + 'm ' + r + 'cm' : m + 'm'; }
+  if (cm < 100000) return (Math.round(cm / 10) / 10) + 'm';
+  return (Math.round(cm / 1000) / 100) + 'km';
 }
+function heightText(count) { return hText(count * BOOK_CM); }
 
 /* ---------- 학교 시트(껍데기)와 주고받기 ---------- */
 async function rpcOnce(fn, args) {
@@ -271,12 +275,13 @@ function rng(seed) { var a = seed >>> 0; return function () { a = (a + 0x6D2B79F
 function pick(r, arr) { return arr[Math.floor(r() * arr.length)]; }
 function inkOn(c) { return (c === '#D2604A' || c === '#B8566B') ? CREAM : INK; }
 // fill: 0~1 (다음 목표까지 얼마나 찼는지), titles: 책등에 적을 제목들(최근 승인된 책)
-function towerSvg(fill, titles) {
+function towerSvg(fill, titles, exact) {
   var W = 190, H = 500, fillPx = Math.max(0, Math.min(1, fill)) * H, r = rng(23), r2 = rng(5);
   var hs = [], sum = 0;
   while (fillPx - sum >= 14) { var hh = Math.min(pick(r, [16, 18, 20, 22, 26]), fillPx - sum); if (fillPx - sum - hh < 14 && fillPx - sum <= 30) hh = fillPx - sum; hs.push(hh); sum += hh; }
+  if (exact) { hs = []; for (var e = 0; e < exact; e++) hs.push(fillPx / exact); }   // 한 권이 그림 한 권 (제목도 실제 순서대로)
   if (!hs.length && fillPx > 0) hs.push(Math.max(8, fillPx));
-  var out = ['<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="우리 반 책탑"><line x1="0" y1="1" x2="' + W + '" y2="1" stroke="#E8B84E" stroke-width="2" stroke-dasharray="6 5"/>'];
+  var out = ['<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="우리 반 책탑" data-n="' + hs.length + '"><line x1="0" y1="1" x2="' + W + '" y2="1" stroke="#E8B84E" stroke-width="2" stroke-dasharray="6 5"/>'];
   function lines(a, b) { var o = [], t = a + 1.4; while (t < b - 0.8) { o.push(t); t += pick(r2, [1.8, 2.2, 2.6]); } return o; }
   var y = H, prevC = '', prevO = '', ti = 0, k = 0;
   hs.forEach(function (h) {
@@ -329,11 +334,22 @@ function towerSvg(fill, titles) {
 }
 
 /* ---------- 목표와 비교 그림 ---------- */
-var GOALS = [
-  { m: 3, name: '교실 천장', kind: 'room' }, { m: 12, name: '학교 4층', kind: 'bld', floors: 4 }, { m: 30, name: '아파트 10층', kind: 'bld', floors: 10 },
-  { m: 75, name: '아파트 25층', kind: 'bld', floors: 25 }, { m: 249, name: '63빌딩', kind: 'sky' }, { m: 555, name: '롯데월드타워', kind: 'sky' },
-  { m: 1947, name: '한라산', kind: 'mt' }, { m: 8849, name: '에베레스트', kind: 'mt' }, { m: 100000, name: '우주', kind: 'space' }
-];
+// 학년별 평균 키(cm): 교육부 2025년 학생 건강검사 표본통계의 남녀 평균을 반올림 (초2·초3·초5 는 발표된 학년 사이를 어림)
+var KID_CM = { '1': 122, '2': 128, '3': 134, '4': 140, '5': 146, '6': 153, 'm1': 159, 'm2': 163, 'm3': 166 };
+var GRADE_NAME = { '1': '1학년', '2': '2학년', '3': '3학년', '4': '4학년', '5': '5학년', '6': '6학년', 'm1': '중1', 'm2': '중2', 'm3': '중3' };
+function classGrade() { var g = APP.settings && APP.settings.extra && APP.settings.extra.grade; return KID_CM[g] ? String(g) : ''; }
+function goalsFor(grade) {
+  var kid = KID_CM[grade] || 140;
+  return [
+    { cm: 45, name: '의자', kind: 'chair' }, { cm: 70, name: '책상', kind: 'desk' },
+    { cm: kid, name: '내 키', sub: (GRADE_NAME[grade] || '초등학생') + ' 평균', kind: 'kid' },
+    { cm: 200, name: '교실 문', kind: 'door' }, { cm: 300, name: '교실 천장', kind: 'room' },
+    { cm: 600, name: '학교 2층', kind: 'bld', floors: 2 }, { cm: 1200, name: '학교 4층', kind: 'bld', floors: 4 },
+    { cm: 3000, name: '아파트 10층', kind: 'bld', floors: 10 }, { cm: 7500, name: '아파트 25층', kind: 'bld', floors: 25 },
+    { cm: 24900, name: '63빌딩', kind: 'sky' }, { cm: 55500, name: '롯데월드타워', kind: 'sky' },
+    { cm: 194700, name: '한라산', kind: 'mt' }, { cm: 884900, name: '에베레스트', kind: 'mt' }, { cm: 10000000, name: '우주', kind: 'space' }
+  ];
+}
 function compareSvg(g) {
   var W = 104, H = 500, o = ['<svg class="cmp" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="비교 대상: ' + esc(g.name) + '">'];
   if (g.kind === 'bld') {
@@ -343,10 +359,26 @@ function compareSvg(g) {
       var y = top + f * fh;
       o.push('<rect x="' + bx + '" y="' + (y + fh - Math.min(3, fh * 0.12)).toFixed(1) + '" width="' + bw + '" height="' + Math.min(3, fh * 0.12).toFixed(1) + '" fill="#A08C72"/>');
       for (var c = 0; c < 3; c++) {
-        if (f === g.floors - 1 && c === 1) { o.push('<rect x="' + (bx + 29) + '" y="' + (y + fh * 0.3).toFixed(1) + '" width="20" height="' + (fh * 0.7).toFixed(1) + '" fill="#6E5847"/>'); continue; }
-        o.push('<rect x="' + (bx + 8 + c * 23) + '" y="' + (y + fh * 0.25).toFixed(1) + '" width="16" height="' + (fh * 0.45).toFixed(1) + '" rx="1" fill="' + (((f * 3 + c) % 4 === 1) ? '#FBEBC4' : '#6E5847') + '"/>');
+        var wh = Math.min(fh * 0.45, 46), dh = Math.min(fh * 0.7, 84);   // 층이 적은 건물은 창과 문이 길쭉해지지 않게
+        if (f === g.floors - 1 && c === 1) { o.push('<rect x="' + (bx + 29) + '" y="' + (y + fh - dh).toFixed(1) + '" width="20" height="' + dh.toFixed(1) + '" fill="#6E5847"/>'); continue; }
+        o.push('<rect x="' + (bx + 8 + c * 23) + '" y="' + (y + fh * 0.3).toFixed(1) + '" width="16" height="' + wh.toFixed(1) + '" rx="1" fill="' + (((f * 3 + c) % 4 === 1) ? '#FBEBC4' : '#6E5847') + '"/>');
       }
     }
+  } else if (g.kind === 'chair') {
+    W = 150; o[0] = o[0].replace('width="104"', 'width="150"').replace('0 0 104 ', '0 0 150 ');
+    o.push('<rect x="20" y="0" width="16" height="500" rx="6" fill="#8F7B63"/><rect x="20" y="20" width="16" height="150" rx="6" fill="#B9A58C"/><rect x="16" y="262" width="118" height="26" rx="8" fill="#B9A58C"/><rect x="112" y="288" width="16" height="212" rx="6" fill="#8F7B63"/><rect x="36" y="380" width="76" height="10" fill="#8F7B63"/>');
+  } else if (g.kind === 'desk') {
+    W = 170; o[0] = o[0].replace('width="104"', 'width="170"').replace('0 0 104 ', '0 0 170 ');
+    o.push('<rect x="4" y="0" width="162" height="30" rx="8" fill="#B9A58C"/><rect x="14" y="30" width="142" height="86" rx="4" fill="#8F7B63"/><rect x="26" y="52" width="118" height="10" rx="5" fill="#6E5847"/><rect x="18" y="116" width="16" height="384" rx="6" fill="#8F7B63"/><rect x="136" y="116" width="16" height="384" rx="6" fill="#8F7B63"/><rect x="34" y="420" width="102" height="10" fill="#8F7B63"/>');
+  } else if (g.kind === 'kid') {
+    W = 150; o[0] = o[0].replace('width="104"', 'width="150"').replace('0 0 104 ', '0 0 150 ');
+    o.push('<circle cx="75" cy="44" r="44" fill="#E9C9A6"/><path d="M31 44a44 44 0 0 1 88 0c-12-18-32-22-44-14c-14-8-34-4-44 14z" fill="#4E392B" stroke="#3E2C20" stroke-width="2"/><circle cx="60" cy="52" r="4" fill="#3E2C20"/><circle cx="90" cy="52" r="4" fill="#3E2C20"/><path d="M62 66q13 10 26 0" fill="none" stroke="#3E2C20" stroke-width="3" stroke-linecap="round"/>');
+    o.push('<rect x="64" y="84" width="22" height="18" fill="#E9C9A6"/><rect x="36" y="98" width="78" height="170" rx="22" fill="#E8B84E"/><rect x="14" y="106" width="24" height="150" rx="12" fill="#E8B84E"/><rect x="112" y="106" width="24" height="150" rx="12" fill="#E8B84E"/><circle cx="26" cy="262" r="12" fill="#E9C9A6"/><circle cx="124" cy="262" r="12" fill="#E9C9A6"/>');
+    o.push('<rect x="42" y="250" width="30" height="220" rx="12" fill="#5E7C9B"/><rect x="78" y="250" width="30" height="220" rx="12" fill="#5E7C9B"/><rect x="34" y="466" width="42" height="34" rx="12" fill="#3E2C20"/><rect x="74" y="466" width="42" height="34" rx="12" fill="#3E2C20"/>');
+  } else if (g.kind === 'door') {
+    // 문 높이 2m = 500px (너비는 칸에 맞춰 조금 좁게)
+    W = 170; o[0] = o[0].replace('width="104"', 'width="170"').replace('0 0 104 ', '0 0 170 ');
+    o.push('<rect x="0" y="0" width="170" height="500" fill="#8F7B63"/><rect x="8" y="8" width="154" height="492" fill="#B9A58C"/><rect x="28" y="40" width="70" height="130" rx="3" fill="#FBEBC4"/><rect x="24" y="250" width="122" height="220" rx="3" fill="none" stroke="#A08C72" stroke-width="4"/><circle cx="142" cy="268" r="7" fill="#6E5847"/>');
   } else if (g.kind === 'room') {
     // 교실 벽과 문: 500px = 3m 이므로 문은 높이 2m(333px)·너비 0.8m(132px)
     W = 160; o[0] = '<svg class="cmp" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="비교 대상: ' + esc(g.name) + '">';
@@ -366,7 +398,7 @@ function compareSvg(g) {
   o.push('</svg>');
   return o.join('');
 }
-function goalFor(m) { for (var i = 0; i < GOALS.length; i++) if (m < GOALS[i].m) return i; return GOALS.length - 1; }
+function goalFor(goals, cm) { for (var i = 0; i < goals.length; i++) if (cm < goals[i].cm) return i; return goals.length - 1; }
 
 /* ---------- 표지 ---------- */
 function coverHtml(b) {
@@ -416,17 +448,19 @@ VIEWS.home = async function () {
   var d = await guard(function () { return rpc('getBoard'); });
   if (!d) { app.innerHTML = '<div class="card"><p>학교 시트와 연결하지 못했어요.</p><button class="btn" type="button" id="again">다시 시도</button></div>'; $('#again').onclick = render; return; }
   $('#cls').textContent = classTitle(d.title);
-  var m = d.total * d.bookCm / 100, gi = goalFor(m), goal = GOALS[gi], fill = Math.min(1, m / goal.m);
-  var left = Math.max(0, Math.ceil(goal.m * 100 / d.bookCm) - d.total);
-  var marks = '<div class="goal" style="top:0"><strong>' + esc(goal.name) + ' · ' + heightText(goal.m * 100 / d.bookCm, d.bookCm) + '</strong><span>다음 목표</span></div>';
-  var nowTop = (1 - fill) * 100, used = [0, nowTop];
-  marks += '<div class="now" style="top:' + nowTop.toFixed(1) + '%"><strong>지금 여기 · ' + heightText(d.total, d.bookCm) + '</strong><span>' + d.total + '권</span></div>';
-  GOALS.slice(0, gi).reverse().forEach(function (g) {
-    var t = (1 - g.m / goal.m) * 100;
+  var goals = goalsFor(classGrade()), cm = d.total * BOOK_CM, gi = goalFor(goals, cm), goal = goals[gi], fill = Math.min(1, cm / goal.cm);
+  var left = Math.max(0, Math.ceil(goal.cm / BOOK_CM) - d.total);
+  var per = 500 / (goal.cm / BOOK_CM), exact = (per >= 12 && per <= 30 && d.total > 0 && cm < goal.cm) ? d.total : 0;   // 한 권이 12~30px 로 그려질 때만 한 권씩
+  function gname(g) { return esc(g.name) + ' · ' + hText(g.cm); }
+  var marks = '<div class="goal" style="top:0"><strong>' + gname(goal) + '</strong><span>' + (goal.sub ? esc(goal.sub) + ' · ' : '') + '다음 목표 · ' + Math.ceil(goal.cm / BOOK_CM) + '권</span></div>';
+  var nowTop = Math.max(10, (1 - fill) * 100), used = [0, nowTop];   // 목표 글자와 겹치지 않게 조금 아래로
+  marks += '<div class="now" style="top:' + nowTop.toFixed(1) + '%"><strong>지금 여기 · ' + hText(cm) + '</strong><span>' + d.total + '권</span></div>';
+  goals.slice(0, gi).reverse().forEach(function (g) {
+    var t = (1 - g.cm / goal.cm) * 100;
     if (used.some(function (u) { return Math.abs(u - t) < 10; }) || t > 97) return;
-    used.push(t); marks += '<div style="top:' + t.toFixed(1) + '%"><strong>' + esc(g.name) + ' · ' + heightText(g.m * 100 / d.bookCm, d.bookCm) + '</strong><span>지남</span></div>';
+    used.push(t); marks += '<div style="top:' + t.toFixed(1) + '%"><strong>' + gname(g) + '</strong><span>지남</span></div>';
   });
-  celebrate(d, m);
+  celebrate(d, cm, goals);
   var side = '';
   if (d.classBooks.length) side += '<h2 style="font-size:19px">우리 반이 함께 읽는 책</h2>' + d.classBooks.map(function (c) { return classBookCard(c); }).join('');
   if (d.ranks) {
@@ -437,22 +471,24 @@ VIEWS.home = async function () {
   }
   if (d.recent.length) side += '<div class="card"><span class="muted">방금 쌓인 책</span><br><strong>' + esc(d.recent[0].title) + (d.recent[0].name ? ' · ' + esc(d.recent[0].name) : '') + '</strong></div>';
   if (!side) side = '<div class="card"><strong>아직 쌓인 책이 없어요</strong><p class="muted">책을 읽고 "책 기록하기"로 첫 책을 올려 보세요.</p></div>';
-  app.innerHTML = '<div class="row" style="justify-content:space-between;margin-bottom:14px"><h1 class="headline">우리 반 책탑 ' + d.total + '권 · ' + heightText(d.total, d.bookCm) + '</h1>' +
-    '<strong>' + (left > 0 ? esc(goal.name) + '까지 ' + left + '권 남았어요' : esc(goal.name) + '에 닿았어요') + '</strong></div>' +
-    '<div class="grid2"><div class="tower">' + towerSvg(fill, d.recent.map(function (r) { return r.title; })) + compareSvg(goal) + '<div class="marks">' + marks + '</div></div><div class="side">' + side + '</div></div>';
+  var titles = d.recent.map(function (r) { return r.title; });
+  if (exact) titles = titles.slice(0, exact).reverse();
+  app.innerHTML = '<div class="row" style="justify-content:space-between;margin-bottom:4px"><h1 class="headline">우리 반 책탑 ' + d.total + '권 · ' + hText(cm) + '</h1>' +
+    '<strong>' + (left > 0 ? esc(goal.name) + '까지 ' + left + '권 남았어요' : esc(goal.name) + '에 닿았어요') + '</strong></div><p class="muted" style="margin:0 0 14px">책 한 권을 ' + BOOK_CM + 'cm로 쌓아요</p>' +
+    '<div class="grid2"><div class="tower">' + towerSvg(fill, titles, exact) + compareSvg(goal) + '<div class="marks">' + marks + '</div></div><div class="side">' + side + '</div></div>';
 };
 
 /* ---------- 목표에 닿았을 때 축하 (기기마다 한 번) ---------- */
-function celebrate(d, m) {
-  var reached = GOALS.filter(function (g) { return m >= g.m; }).length, key = 'ru_goal|' + APP.s, prev = null;
+function celebrate(d, cm, goals) {
+  var reached = goals.filter(function (g) { return cm >= g.cm; }).length, key = 'ru_goal2|' + APP.s, prev = null;
   try { prev = localStorage.getItem(key); localStorage.setItem(key, String(reached)); } catch (e) { return; }
   if (prev === null || reached <= Number(prev) || !reached) return;
-  var g = GOALS[reached - 1], next = GOALS[reached], conf = '';
+  var g = goals[reached - 1], next = goals[reached], conf = '';
   for (var i = 0; i < 36; i++) conf += '<i style="left:' + (i * 2.8 + (i % 3)) + '%;background:' + BOOKC[i % 6] + ';animation-delay:' + ((i * 37) % 900) + 'ms;animation-duration:' + (2200 + (i * 53) % 1200) + 'ms"></i>';
   setTimeout(function () {
     if ((location.hash || '#home') !== '#home' || $('#modal').innerHTML) return;
-    $('#modal').innerHTML = '<div class="conf" aria-hidden="true">' + conf + '</div><div class="shade mid" id="cels"><div class="qrbox" role="dialog" aria-labelledby="celt"><span class="pill">목표 달성</span><h2 id="celt" style="font-size:28px">' + esc(g.name) + '에 닿았어요</h2><p style="margin:0;font-size:17px">우리 반이 함께 <b>' + d.total + '권</b>, ' + heightText(d.total, d.bookCm) + '를 쌓았어요.</p>' +
-      (next ? '<p class="muted" style="margin:0">다음 목표는 ' + esc(next.name) + ' (' + heightText(next.m * 100 / d.bookCm, d.bookCm) + ')</p>' : '') + '<button class="btn" type="button" id="celx">좋아요</button></div></div>';
+    $('#modal').innerHTML = '<div class="conf" aria-hidden="true">' + conf + '</div><div class="shade mid" id="cels"><div class="qrbox" role="dialog" aria-labelledby="celt"><span class="pill">목표 달성</span><h2 id="celt" style="font-size:28px">' + esc(g.name) + '에 닿았어요</h2><p style="margin:0;font-size:17px">우리 반이 함께 <b>' + d.total + '권</b>, ' + hText(cm) + '를 쌓았어요.</p>' +
+      (next ? '<p class="muted" style="margin:0">다음 목표는 ' + esc(next.name) + ' (' + hText(next.cm) + ')</p>' : '') + '<button class="btn" type="button" id="celx">좋아요</button></div></div>';
     $('#celx').onclick = function () { $('#modal').innerHTML = ''; };
     $('#cels').onclick = function (ev) { if (ev.target === ev.currentTarget) $('#modal').innerHTML = ''; };
     $('#celx').focus();
@@ -518,7 +554,7 @@ VIEWS.student = async function () {
   }
   var me = APP.me, d = await guard(function () { return rpc('getMyBooks', [me.id, me.pw]); });
   if (!d) { APP.me = null; return; }
-  var cm = APP.ping.bookCm, rule = APP.settings.rule;
+  var cm = BOOK_CM, rule = APP.settings.rule;
   var cbs = d.classBooks.map(function (c) {
     var st = c.my === 'approved' ? '<span class="pill ok">읽었어요 · 승인됨</span>' : c.my === 'pending' ? '<span class="pill wait">읽었어요 · 승인 대기</span>' : '<button class="btn small" type="button" data-cb="' + esc(c.id) + '">다 읽었어요 · 감상 쓰기</button>';
     return classBookCard(c, '<div>' + st + '</div>');
@@ -623,6 +659,11 @@ VIEWS.admin = async function () {
   var d = await guard(function () { return rpc('getAllDataAdmin', [APP.token]); });
   if (!d) { adminOut(); render(); return; }
   ADMIN.data = d; ADMIN.at = Date.now(); APP.settings = d.settings; APP.ping.shell = d.shell;
+  if (d.shell >= 2 && !classGrade() && d.students.length) {   // 학년을 아직 안 골랐으면 명단에서 가장 많은 학년으로 맞춰 둠
+    var tally = {}; d.students.forEach(function (st) { if (KID_CM[st.grade]) tally[st.grade] = (tally[st.grade] || 0) + 1; });
+    var top = Object.keys(tally).sort(function (a, b) { return tally[b] - tally[a]; })[0];
+    if (top) { try { APP.settings = d.settings = await rpc('setSettings', [APP.token, { extra: { grade: top } }]); } catch (e) {} }
+  }
   $('#cls').textContent = classTitle(d.settings.className || d.sheetName || APP.ping.title);
   drawAdmin();
 };
@@ -666,7 +707,7 @@ function editBook(b) {
 }
 // 독서기록장 인쇄: 승인된 기록만, 학생마다 한 쪽씩
 function printRecords(d, students) {
-  var cm = APP.ping.bookCm, cls = classTitle($('#cls').textContent), html = '';
+  var cm = BOOK_CM, cls = classTitle($('#cls').textContent), html = '';
   students.forEach(function (s) {
     var list = d.books.filter(function (b) { return b.sid === s.id && b.status === 'approved'; });
     html += '<section><h1>' + esc(s.name) + '의 독서기록장</h1><p class="sum">' + esc(cls) + ' · ' + esc(s.grade) + '학년 ' + esc(s.cls) + '반 ' + esc(s.number) + '번 · 모두 ' + list.length + '권 (책탑 ' + heightText(list.length, cm) + ')</p>' +
@@ -703,7 +744,7 @@ var ADMIN_TABS = {
     });
   },
   records: function (el, d) {
-    var cm = APP.ping.bookCm, sid = ADMIN.recSid || '', cnt = {};
+    var cm = BOOK_CM, sid = ADMIN.recSid || '', cnt = {};
     d.books.forEach(function (b) { if (b.status === 'approved') cnt[b.sid] = (cnt[b.sid] || 0) + 1; });
     if (sid && !d.students.some(function (s) { return s.id === sid; })) sid = ADMIN.recSid = '';
     var head = '<div class="row" style="margin-bottom:14px"><label for="rsel" style="font-weight:700">학생</label><select class="in" id="rsel" style="width:auto;flex:1 1 180px;max-width:280px"><option value="">우리 반 전체</option>' +
@@ -788,10 +829,11 @@ var ADMIN_TABS = {
   },
   board: function (el, d) {
     var link = location.origin + location.pathname + '?s=' + encodeURIComponent(APP.s);
-    el.innerHTML = '<div class="stack" style="max-width:560px">' + (d.shell >= 2 ? '<form class="item" id="cnf"><label class="f" for="cn" style="margin-top:0">화면에 보일 학급 이름 (비우면 시트 이름을 씁니다)</label><div class="row" style="flex-wrap:nowrap"><input class="in" id="cn" maxlength="30" autocomplete="off" value="' + esc(d.settings.className || '') + '" placeholder="' + esc(classTitle(d.sheetName)) + '"><button class="btn small" type="submit" style="white-space:nowrap">저장</button></div></form>' : '') + '<div class="item"><label class="row" style="min-height:44px;font-weight:700"><input type="checkbox" id="sn" style="width:22px;height:22px"' + (d.settings.showNames ? ' checked' : '') + '> 현황판에 친구 이름과 권수 보이기</label><p class="muted" style="margin:0">끄면 현황판에는 우리 반 전체 책탑만 보여요.</p></div>' +
+    el.innerHTML = '<div class="stack" style="max-width:560px">' + (d.shell >= 2 ? '<form class="item" id="cnf"><label class="f" for="cn" style="margin-top:0">화면에 보일 학급 이름 (비우면 시트 이름을 씁니다)</label><div class="row" style="flex-wrap:nowrap"><input class="in" id="cn" maxlength="30" autocomplete="off" value="' + esc(d.settings.className || '') + '" placeholder="' + esc(classTitle(d.sheetName)) + '"><button class="btn small" type="submit" style="white-space:nowrap">저장</button></div></form>' : '') + (d.shell >= 2 ? '<div class="item"><label class="f" for="gr" style="margin-top:0">우리 반 학년 (현황판의 "내 키" 목표에 쓰여요)</label><select class="in" id="gr">' + Object.keys(GRADE_NAME).map(function (k) { return '<option value="' + k + '"' + (classGrade() === k ? ' selected' : '') + '>' + GRADE_NAME[k] + ' · 평균 ' + KID_CM[k] + 'cm</option>'; }).join('') + (classGrade() ? '' : '<option value="" selected>고르지 않음 (140cm로 셈)</option>') + '</select><p class="muted" style="margin:8px 0 0">여러 학년이 함께 쓰면 가운데 학년을 고르세요.</p></div>' : '') + '<div class="item"><label class="row" style="min-height:44px;font-weight:700"><input type="checkbox" id="sn" style="width:22px;height:22px"' + (d.settings.showNames ? ' checked' : '') + '> 현황판에 친구 이름과 권수 보이기</label><p class="muted" style="margin:0">끄면 현황판에는 우리 반 전체 책탑만 보여요.</p></div>' +
       '<div class="item"><strong>학생에게 알려 줄 주소</strong><input class="in" id="lk" readonly value="' + esc(link) + '" style="margin-top:8px"><div class="row" style="margin-top:8px"><button class="btn line small" type="button" id="cp">주소 복사</button><button class="btn small" type="button" id="bq">접속 QR 크게 보기</button></div><p class="muted" style="margin:8px 0 0">현황판 오른쪽 위의 "접속 QR" 단추로도 언제든 띄울 수 있어요.</p></div>' +
       '<div class="item"><strong>우리 반 시트</strong><p class="muted" style="margin:4px 0 8px">학생 명단과 기록은 이 시트에 저장됩니다.</p><a class="btn line small" href="' + esc(d.sheetUrl) + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;text-decoration:none">시트 열기</a></div></div>';
     if ($('#cnf')) $('#cnf').onsubmit = function (ev) { ev.preventDefault(); act('setSettings', [{ className: $('#cn').value }], '학급 이름을 저장했어요.'); };
+    if ($('#gr')) $('#gr').onchange = function () { if ($('#gr').value) act('setSettings', [{ extra: { grade: $('#gr').value } }], '학년을 저장했어요.'); };
     $('#sn').onchange = function () { act('setSettings', [{ showNames: $('#sn').checked }], '저장했어요.'); };
     $('#bq').onclick = showQr;
     $('#cp').onclick = function () { var i = $('#lk'); i.select(); (navigator.clipboard ? navigator.clipboard.writeText(i.value) : Promise.reject()).then(function () { toast('주소를 복사했어요.'); }, function () { toast('주소를 길게 눌러 복사해 주세요.'); }); };

@@ -106,8 +106,11 @@ try:
 
         # 7. 현황판
         pg.click('[data-go=home]'); pg.wait_for_selector('.tower svg')
-        ok('현황판: 1권 · 0.3m', '1권 · 0.3m' in pg.inner_text('h1.headline'))
-        ok('다음 목표: 교실 천장까지 9권', '교실 천장까지 9권' in pg.inner_text('#app'))
+        ok('현황판: 1권 · 2cm', '1권 · 2cm' in pg.inner_text('h1.headline'))
+        ok('다음 목표: 의자까지 22권', '의자까지 22권' in pg.inner_text('#app') and '책 한 권을 2cm로' in pg.inner_text('#app'))
+        ok('책이 적을 때는 한 권이 그림 한 권', pg.get_attribute('.tower svg >> nth=0', 'data-n') == '1')
+        ok('높이 글: cm·m·km', pg.evaluate("[hText(64), hText(146), hText(300), hText(2580), hText(194700), hText(10000000)]") == ['64cm', '1m 46cm', '3m', '25.8m', '1.95km', '100km'])
+        ok('학년을 못 정했을 때 내 키는 140cm, 선생님이 들어온 뒤에는 명단 학년(5학년 146cm)', pg.evaluate("goalsFor('')[2].cm") == 140 and pg.evaluate("goalsFor(classGrade())[2].cm") == 146)
         ok('책탑 그림과 비교 그림', pg.locator('.tower svg').count() == 2 and pg.locator('.tower svg').first.locator('rect').count() >= 1)
         ok('친구들이 쌓은 책에 이름과 권수', '김하늘' in pg.inner_text('.side') and '1권' in pg.inner_text('.side'))
         ok('학급 도서 진행(아직 0명)', '3명 중 0명' in pg.inner_text('.side'))
@@ -120,7 +123,7 @@ try:
         pg.click('[data-go=home]'); pg.wait_for_selector('h1.headline'); pg.click('[data-go=admin]'); pg.wait_for_selector('#all'); pg.click('#all')
         pg.wait_for_function("document.querySelectorAll('[data-rid]').length === 0")
         pg.click('[data-go=home]'); pg.wait_for_selector('.tower svg')
-        ok('고쳐 쓴 기록 승인 → 2권 · 0.6m', '2권 · 0.6m' in pg.inner_text('h1.headline'))
+        ok('고쳐 쓴 기록 승인 → 2권 · 4cm', '2권 · 4cm' in pg.inner_text('h1.headline'))
         ok('학급 도서 진행 1명', '3명 중 1명' in pg.inner_text('.side'))
 
         # 8-2. 독서 기록 보기·인쇄
@@ -138,7 +141,11 @@ try:
         pg.click('[data-go=admin]'); pg.wait_for_selector('.menu'); pg.click('[data-tab=rule]')
         pg.select_option('#rk', 'char'); pg.fill('#rm', '30'); pg.click('#rf button[type=submit]'); pg.wait_for_timeout(400)
         pg.click('[data-tab=rule]'); ok('감상 기준 저장 (글자 수 30)', pg.input_value('#rm') == '30' and pg.input_value('#rk') == 'char')
-        pg.click('[data-tab=board]'); pg.wait_for_selector('#sn'); pg.click('#bq'); pg.wait_for_selector('.qrimg'); ok('선생님 메뉴에서도 QR 크게 보기', True); pg.click('#qrx')
+        pg.click('[data-tab=board]'); pg.wait_for_selector('#sn')
+        ok('학생 명단의 학년(5학년)으로 내 키가 맞춰짐', pg.input_value('#gr') == '5' and pg.evaluate("goalsFor(classGrade())[2].cm") == 146)
+        pg.select_option('#gr', '6'); pg.wait_for_function("classGrade() === '6'")
+        ok('학년을 바꾸면 내 키도 바뀜 (6학년 153cm)', pg.evaluate("goalsFor(classGrade())[2]")['cm'] == 153 and pg.evaluate("goalsFor(classGrade())[2].sub") == '6학년 평균')
+        pg.wait_for_selector('#bq'); pg.click('#bq'); pg.wait_for_selector('.qrimg'); ok('선생님 메뉴에서도 QR 크게 보기', True); pg.click('#qrx')
         pg.uncheck('#sn'); pg.wait_for_timeout(500)
         pg.click('[data-go=home]'); pg.wait_for_selector('.tower svg')
         ok('이름 가리기: 현황판에 이름 없음', '김하늘' not in pg.inner_text('#app') and '2권' in pg.inner_text('h1.headline'))
@@ -193,20 +200,21 @@ try:
         call('setPrivate', tok, {'nat': {'on': True, 'key': 'k1', 'collector': 'https://script.google.com/macros/s/abc/exec', 'name': '햇살초'}})
         ok('저장칸 쓰기·읽기, 설정하면 보고가 나감', call('getPrivateAdmin', tok)['result']['nat']['key'] == 'k1' and call('natReport')['result']['ok'] is True and 'k1' not in json.dumps(call('getSettings')) + json.dumps(call('getBoard')))
         call('setSettings', tok, {'extra': {'theme': 'wood'}})
-        ok('자유 저장칸과 날짜별 권수', call('getSettings')['result']['extra'] == {'theme': 'wood'} and sum(call('getBoard')['result']['days'].values()) == 2)
+        ok('자유 저장칸과 날짜별 권수', call('getSettings')['result']['extra'] == {'grade': '6', 'theme': 'wood'} and sum(call('getBoard')['result']['days'].values()) == 2)
         pg.click('[data-go=admin]'); pg.wait_for_selector('.menu'); pg.click('[data-tab=pw]'); pg.click('#rs'); pg.fill('#rsw', '아니'); pg.click('#rsf button[type=submit]'); pg.wait_for_timeout(200)
         ok('초기화는 "지우기"를 적어야 함', len(state()['Books']) > 1)
         pg.fill('#rsw', '지우기'); pg.click('#rsf button[type=submit]'); pg.wait_for_function("!document.querySelector('.shade')"); pg.wait_for_timeout(300)
         ok('책 기록 초기화 (학생·학급 도서는 남음)', len(state()['Books']) == 1 and len(state()['Students']) == 4 and len(state()['ClassBooks']) == 2)
-        # 10-4. 목표 축하: 10권(3m)이 되면 교실 천장
+        # 10-4. 목표 축하: 23권(46cm)이 되면 의자(45cm)
         sid2 = state()['Students'][2][0]
-        rids = [call('addBook', sid2, '', {'title': f'책 {i}', 'note': '가'})['result']['rid'] for i in range(10)]
+        rids = [call('addBook', sid2, '', {'title': f'책 {i}', 'note': '가'})['result']['rid'] for i in range(23)]
         pg.click('[data-go=home]'); pg.wait_for_selector('h1.headline'); pg.wait_for_timeout(800)
         ok('승인 전에는 축하가 뜨지 않음', pg.locator('#celt').count() == 0)
         call('approveBooks', tok, rids); pg.reload(); pg.wait_for_selector('#celt')
-        ok('목표에 닿으면 축하', '교실 천장에 닿았어요' in pg.inner_text('.qrbox') and '10권' in pg.inner_text('.qrbox') and '학교 4층' in pg.inner_text('.qrbox'))
+        ok('목표에 닿으면 축하', '의자에 닿았어요' in pg.inner_text('.qrbox') and '23권' in pg.inner_text('.qrbox') and '46cm' in pg.inner_text('.qrbox') and '책상' in pg.inner_text('.qrbox'))
         pg.click('#celx'); pg.reload(); pg.wait_for_selector('.tower svg'); pg.wait_for_timeout(900)
         ok('축하는 한 번만', pg.locator('#celt').count() == 0)
+        ok('다음 목표는 책상, 한 권씩 그림', '책상까지 12권' in pg.inner_text('#app') and pg.get_attribute('.tower svg >> nth=0', 'data-n') == '23')
         pg.click('#inst'); pg.wait_for_selector('#insx'); ok('앱으로 설치하기 안내', '홈 화면' in pg.inner_text('.qrbox')); pg.click('#insx')
         ok('설치 설명 파일이 열림', json.load(urllib.request.urlopen(BASE + '/readus/manifest.webmanifest'))['short_name'] == '리더스')
         pg.click('[data-go=student]'); pg.wait_for_selector('.name'); pg.locator('.name', has_text='김하늘').click(); pg.wait_for_selector('#pw'); pg.fill('#pw', '4321'); pg.click('#pwf button[type=submit]'); pg.wait_for_selector('#rec')

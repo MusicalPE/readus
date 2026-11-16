@@ -49,7 +49,7 @@ img.cover{object-fit:cover;padding:0;border-left:0}
 /* 현황판 */
 .tower{flex:3 1 420px;background:var(--wood);color:var(--card);border-radius:20px;padding:24px;display:flex;gap:16px;justify-content:center;overflow:hidden}
 .tower svg{flex:none}
-.marks{position:relative;width:170px;height:500px;flex:none}
+.marks{position:relative;width:170px;min-width:120px;height:500px;flex:0 1 170px}
 .marks div{position:absolute;left:0;transform:translateY(-50%);display:flex;flex-direction:column;line-height:1.3}
 .marks strong{font-size:14px;color:var(--cream)}
 .marks span{font-size:12px;color:var(--cream)}
@@ -98,7 +98,7 @@ table.t td,table.t th{padding:8px 6px;border-bottom:1px solid var(--line);text-a
 <script>
 'use strict';
 var TEMPLATE_URL = 'https://docs.google.com/spreadsheets/d/1i-lr4aewTmhj4eJ-hfXgjxaPzflmMyLMn-aqUepZjls/copy';   // 껍데기가 들어 있는 견본 시트 (사본 만들기)
-var APP = { version: '0.1.1', requiredShell: 1, s: '', ping: null, settings: null, relay: '', token: '', me: null };
+var APP = { version: '0.1.2', requiredShell: 1, s: '', ping: null, settings: null, relay: '', token: '', me: null };
 
 /* ---------- 작은 도구 ---------- */
 function $(sel, root) { return (root || document).querySelector(sel); }
@@ -245,7 +245,12 @@ function compareSvg(g) {
       }
     }
   } else if (g.kind === 'room') {
-    o.push('<rect x="6" y="0" width="92" height="500" fill="#5E4636"/><rect x="6" y="0" width="92" height="10" fill="#B9A58C"/><rect x="26" y="165" width="52" height="335" rx="3" fill="#B9A58C"/><rect x="33" y="180" width="38" height="70" rx="2" fill="#FBEBC4"/><circle cx="70" cy="345" r="4" fill="#6E5847"/>');
+    // 교실 벽과 문: 500px = 3m 이므로 문은 높이 2m(333px)·너비 0.8m(132px)
+    W = 160; o[0] = '<svg class="cmp" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="비교 대상: ' + esc(g.name) + '">';
+    o.push('<rect x="0" y="0" width="160" height="500" fill="#5E4636"/><rect x="0" y="0" width="160" height="12" fill="#B9A58C"/><rect x="0" y="488" width="160" height="12" fill="#6E5847"/>');
+    o.push('<rect x="8" y="160" width="144" height="340" fill="#8F7B63"/><rect x="14" y="167" width="132" height="333" fill="#B9A58C"/>');
+    o.push('<rect x="32" y="192" width="56" height="96" rx="2" fill="#FBEBC4"/><rect x="26" y="330" width="108" height="150" rx="2" fill="none" stroke="#A08C72" stroke-width="3"/><circle cx="130" cy="345" r="5" fill="#6E5847"/>');
+    o.push('<rect x="96" y="124" width="50" height="22" rx="3" fill="#FBEBC4"/><rect x="104" y="133" width="34" height="4" rx="2" fill="#6E5847"/>');
   } else if (g.kind === 'sky') {
     o.push('<polygon points="52,0 70,70 76,500 28,500 34,70" fill="#B9A58C"/><polygon points="52,0 70,70 76,500 52,500" fill="#8F7B63"/>');
     for (var i = 1; i < 16; i++) o.push('<rect x="30" y="' + (70 + i * 26) + '" width="44" height="3" fill="#6E5847" opacity=".5"/>');

@@ -76,6 +76,8 @@ img.cover{object-fit:cover;padding:0;border-left:0}
 .ph{display:flex;align-items:center;gap:10px;font-size:19px;padding:18px 22px;border-bottom:1px solid var(--line)}
 .ph i{width:9px;height:9px;border-radius:50%;background:#C65D3B}
 .pb{padding:20px 22px}
+.pb,.ph{animation:fadein .16s ease}
+@keyframes fadein{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}
 .item{border:1px solid var(--line);border-radius:14px;padding:16px 18px;background:var(--card)}
 .textlink{min-height:44px;padding:0 6px;border:0;background:none;color:var(--sub);font-weight:700;border-radius:8px}
 summary{cursor:pointer;min-height:32px;border-radius:8px}
@@ -95,7 +97,7 @@ summary{cursor:pointer;min-height:32px;border-radius:8px}
 .brand:active{transform:scale(.98)}
 summary:hover{color:#8E3A22}
 .mi:focus-visible,.textlink:focus-visible,summary:focus-visible{outline:3px solid var(--mustard);outline-offset:1px}
-@media (prefers-reduced-motion:reduce){.btn,.mi,.name,.q,.found,.textlink,.brand,summary{transition:none}.btn:hover,.name:hover,.q:hover,.found:hover,.btn:active,.mi:active,.name:active,.q:active,.found:active{transform:none}}
+@media (prefers-reduced-motion:reduce){.pb,.ph{animation:none}.btn,.mi,.name,.q,.found,.textlink,.brand,summary{transition:none}.btn:hover,.name:hover,.q:hover,.found:hover,.btn:active,.mi:active,.name:active,.q:active,.found:active{transform:none}}
 @media (max-width:760px){.menu{flex:1 1 100%;flex-direction:row;flex-wrap:wrap}.mi{width:auto;flex:1 1 44%}}
 /* 아래에서 올라오는 창 */
 .shade{position:fixed;inset:0;background:rgba(62,44,32,.55);display:flex;align-items:flex-end;justify-content:center;z-index:20}
@@ -128,7 +130,7 @@ table.t td,table.t th{padding:8px 6px;border-bottom:1px solid var(--line);text-a
 <script>
 'use strict';
 var TEMPLATE_URL = 'https://docs.google.com/spreadsheets/d/1i-lr4aewTmhj4eJ-hfXgjxaPzflmMyLMn-aqUepZjls/copy';   // 껍데기가 들어 있는 견본 시트 (사본 만들기)
-var APP = { version: '0.2.0', requiredShell: 1, s: '', ping: null, settings: null, relay: '', token: '', me: null };
+var APP = { version: '0.2.1', requiredShell: 1, s: '', ping: null, settings: null, relay: '', token: '', me: null };
 
 /* ---------- 작은 도구 ---------- */
 function $(sel, root) { return (root || document).querySelector(sel); }
@@ -487,7 +489,12 @@ VIEWS.admin = async function () {
   }
   var d = await guard(function () { return rpc('getAllDataAdmin', [APP.token]); });
   if (!d) { adminOut(); render(); return; }
-  ADMIN.data = d; APP.settings = d.settings;
+  ADMIN.data = d; ADMIN.at = Date.now(); APP.settings = d.settings;
+  drawAdmin();
+};
+// 메뉴를 누를 때는 시트에 다시 묻지 않고, 받아 둔 자료로 바로 그림 (끊기지 않게)
+function drawAdmin() {
+  var app = $('#app'), d = ADMIN.data;
   var pend = d.books.filter(function (b) { return b.status === 'pending'; });
   if (!ADMIN_TABS[ADMIN.tab]) ADMIN.tab = 'approve';
   var label = ADMIN_MENU.filter(function (m) { return m[0] === ADMIN.tab; })[0][1];
@@ -497,10 +504,25 @@ VIEWS.admin = async function () {
       var badge = m[0] === 'approve' && pend.length ? '<span class="badge">' + pend.length + '</span>' : (m[0] === 'pw' && APP.pwDefault ? '<span class="badge">!</span>' : '');
       return '<button class="mi" type="button" data-tab="' + m[0] + '"' + (ADMIN.tab === m[0] ? ' aria-current="page"' : '') + '><i aria-hidden="true"></i><span>' + m[1] + '</span>' + badge + '</button>';
     }).join('') + '</nav><section class="card pane"><h2 class="ph"><i aria-hidden="true"></i>' + esc(ADMIN.tab === 'approve' ? '기록 승인 · 대기 ' + pend.length + '건' : label) + '</h2><div class="pb" id="pane"></div></section></div>';
-  app.querySelectorAll('[data-tab]').forEach(function (b) { b.onclick = function () { ADMIN.tab = b.dataset.tab; render(); }; });
+  app.querySelectorAll('[data-tab]').forEach(function (b) {
+    b.onclick = function () {
+      if (ADMIN.tab === b.dataset.tab) return;
+      ADMIN.tab = b.dataset.tab; $('#modal').innerHTML = ''; drawAdmin();
+      var mi = $('.mi[aria-current="page"]'); if (mi) mi.focus({ preventScroll: true });
+      if (ADMIN.tab === 'approve' && Date.now() - ADMIN.at > 60000) refreshAdminQuietly();   // 기록 승인은 조용히 새 기록을 확인
+    };
+  });
   $('#lo').onclick = function () { adminOut(); go('home'); };
   ADMIN_TABS[ADMIN.tab]($('#pane'), d, pend);
-};
+}
+async function refreshAdminQuietly() {
+  try {
+    var d = await rpc('getAllDataAdmin', [APP.token]);
+    var before = ADMIN.data.books.filter(function (b) { return b.status === 'pending'; }).length, now = d.books.filter(function (b) { return b.status === 'pending'; }).length;
+    ADMIN.data = d; ADMIN.at = Date.now(); APP.settings = d.settings;
+    if (before !== now && location.hash === '#admin' && ADMIN.tab === 'approve' && !$('#modal').innerHTML) drawAdmin();
+  } catch (e) {}
+}
 function stuName(d, sid) { var s = d.students.filter(function (x) { return x.id === sid; })[0]; return s ? s.number + '번 ' + s.name : '(지워진 학생)'; }
 async function act(fn, args, msg) { var r = await guard(function () { return rpc(fn, [APP.token].concat(args)); }); if (r) { if (msg) toast(msg); render(); } return r; }
 var ADMIN_TABS = {
@@ -550,7 +572,7 @@ var ADMIN_TABS = {
       (d.students.length ? '<table class="t"><thead><tr><th>학년</th><th>반</th><th>번호</th><th>이름</th><th>승인된 책</th><th>비밀번호</th><th></th></tr></thead><tbody>' + d.students.map(function (s) {
         return '<tr data-sid="' + esc(s.id) + '"><td>' + esc(s.grade) + '</td><td>' + esc(s.cls) + '</td><td>' + esc(s.number) + '</td><td>' + esc(s.name) + '</td><td>' + (cnt[s.id] || 0) + '권</td><td><button class="btn line small" type="button" data-pw>' + (s.lock ? '바꾸기' : '정하기') + '</button></td><td><button class="btn line small" type="button" data-rm>지우기</button></td></tr>';
       }).join('') + '</tbody></table>' : '<p>아직 등록된 학생이 없어요. <button class="btn small" type="button" id="toreg">학생 등록하러 가기</button></p>') + '</div>';
-    if ($('#toreg')) $('#toreg').onclick = function () { ADMIN.tab = 'register'; render(); };
+    if ($('#toreg')) $('#toreg').onclick = function () { ADMIN.tab = 'register'; drawAdmin(); };
     el.querySelectorAll('[data-sid]').forEach(function (tr) {
       var sid = tr.dataset.sid;
       $('[data-rm]', tr).onclick = function () { if (confirm('이 학생과 학생의 책 기록을 모두 지울까요? 되돌릴 수 없어요.')) act('deleteStudent', [sid], '지웠어요.'); };

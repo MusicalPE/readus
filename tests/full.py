@@ -30,6 +30,7 @@ try:
         pg.on('pageerror', lambda e: errors.append('JS: ' + str(e)))
         pg.on('console', lambda m: errors.append('console: ' + m.text) if m.type == 'error' and 'fonts.g' not in m.text and 'favicon' not in m.text and 'ERR_' not in m.text else None)
         pg.on('dialog', lambda d: d.accept())
+        posts = []; pg.on('request', lambda r: posts.append(r.url) if r.method == 'POST' and r.url.endswith('/exec') else None)
         def toast(): return pg.locator('#toast').inner_text()
         def state(): return json.load(urllib.request.urlopen(BASE + '/__state'))['sheets']
 
@@ -125,6 +126,8 @@ try:
         # 10-2. 선생님 메뉴: 업데이트 내역, 비밀번호 바꾸기, 로그아웃
         pg.click('[data-go=home]'); pg.wait_for_selector('h1.headline'); pg.click('[data-go=admin]'); pg.wait_for_selector('.menu')
         ok('선생님 메뉴는 기록 승인부터', pg.locator('.mi[aria-current=page]').inner_text().startswith('기록 승인'))
+        n0 = len(posts); pg.click('[data-tab=students]'); pg.click('[data-tab=rule]'); pg.click('[data-tab=board]'); pg.wait_for_selector('#sn'); pg.wait_for_timeout(200)
+        ok('메뉴를 눌러도 시트에 다시 묻지 않음 (바로 바뀜)', len(posts) == n0, f'요청 {len(posts) - n0}번')
         pg.click('[data-tab=log]'); pg.wait_for_selector('#logl details')
         ok('업데이트 내역 표시', pg.locator('#logl details').count() >= 1)
         pg.click('[data-tab=pw]'); pg.fill('#npw', 'abcd'); pg.click('#pf button[type=submit]'); pg.wait_for_timeout(400)

@@ -1,0 +1,577 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Read Us! 리더스</title>
+<meta name="description" content="읽은 책을 쌓아 우주까지 — 학급 독서기록장">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Batang:wght@400;700&family=Jua&family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+:root{--paper:#F4EBDD;--card:#FFFCF6;--ink:#3E2C20;--sub:#6E5847;--line:#DCCDB8;--line2:#B9A58C;--wood:#4E392B;--soft:#EFE4D2;--mustard:#E8B84E;--butter:#FBEBC4;--sage:#5E9C8A;--sagebg:#DDEBD3;--peach:#F8DCC8;--cream:#E9DCC8}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--paper);color:var(--ink);font-family:'Noto Sans KR','Malgun Gothic',sans-serif;font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%}
+h1,h2,h3{font-family:'Gowun Batang',serif;margin:0;font-weight:700}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+.wrap{max-width:1100px;margin:0 auto;padding:20px 16px 40px}
+.top{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
+.brand{display:flex;align-items:center;gap:10px;text-decoration:none;color:inherit;background:none;border:0;padding:0}
+.brand svg{width:40px;height:40px;flex:none}
+.brand b{font-family:'Gowun Batang',serif;font-size:22px}
+.brand small{display:block;font-size:12px;color:var(--sub)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.btn{min-height:44px;padding:0 18px;border:0;border-radius:12px;background:var(--ink);color:var(--card);font-weight:700}
+.btn.line{background:var(--card);color:var(--ink);border:1px solid var(--line2)}
+.btn.small{min-height:44px;padding:0 14px;font-size:13px;border-radius:10px}
+.btn.wide{width:100%}
+.btn:disabled{opacity:.5;cursor:default}
+.card{background:var(--card);border-radius:18px;padding:18px 20px}
+.dark{background:var(--ink);color:var(--card)}
+.muted{color:var(--sub);font-size:13px}
+.dark .muted{color:var(--cream)}
+.pill{display:inline-block;font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--butter);white-space:nowrap}
+.pill.wait{background:var(--peach)}.pill.ok{background:var(--sagebg)}.pill.back{background:#F3D2D2}
+.grid2{display:flex;flex-wrap:wrap;gap:18px;align-items:stretch}
+.stack{display:flex;flex-direction:column;gap:12px}
+label.f{display:block;font-size:12px;font-weight:700;color:var(--sub);margin:10px 0 6px}
+.in{width:100%;min-height:44px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+textarea.in{min-height:96px;resize:vertical;line-height:1.5}
+.in:focus,.btn:focus-visible,.tab:focus-visible,.name:focus-visible{outline:3px solid var(--mustard);outline-offset:1px}
+.bar{height:12px;border-radius:6px;background:var(--soft);overflow:hidden}
+.bar i{display:block;height:100%;border-radius:6px;background:var(--sage)}
+.cover{flex:0 0 60px;width:60px;height:84px;border-radius:4px 8px 8px 4px;display:flex;align-items:center;justify-content:center;text-align:center;font-family:Jua,sans-serif;font-size:12px;line-height:1.2;padding:4px;overflow:hidden;color:var(--ink);border-left:6px solid rgba(62,44,32,.25)}
+img.cover{object-fit:cover;padding:0;border-left:0}
+.cb{display:flex;gap:14px}
+.cb .b{flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+/* 현황판 */
+.tower{flex:3 1 420px;background:var(--wood);color:var(--card);border-radius:20px;padding:24px;display:flex;gap:16px;justify-content:center;overflow:hidden}
+.tower svg{flex:none}
+.marks{position:relative;width:170px;height:500px;flex:none}
+.marks div{position:absolute;left:0;transform:translateY(-50%);display:flex;flex-direction:column;line-height:1.3}
+.marks strong{font-size:14px;color:var(--cream)}
+.marks span{font-size:12px;color:var(--cream)}
+.marks .goal strong{color:var(--mustard);font-size:15px}
+.marks .now strong{color:var(--card);font-size:17px}
+.side{flex:2 1 340px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.rank{display:grid;grid-template-columns:72px 1fr 44px;gap:10px;align-items:center}
+.rank .bar{height:18px}
+.headline{font-size:30px}
+/* 학생 이름 고르기 */
+.names{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.name{min-height:52px;border:1px solid var(--line);border-radius:12px;background:var(--card);font-weight:700}
+.name small{display:block;font-weight:400;color:var(--sub);font-size:12px}
+/* 탭 */
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px}
+.tab{min-height:44px;padding:0 16px;border:1px solid var(--line2);border-radius:999px;background:var(--card);font-weight:700}
+.tab[aria-selected="true"]{background:var(--ink);color:var(--card);border-color:var(--ink)}
+/* 아래에서 올라오는 창 */
+.shade{position:fixed;inset:0;background:rgba(62,44,32,.55);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.sheet{background:var(--card);width:100%;max-width:520px;max-height:92vh;overflow:auto;border-radius:24px 24px 0 0;padding:24px 20px;display:flex;flex-direction:column;gap:12px}
+.q{min-height:44px;text-align:left;padding:8px 14px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.found{display:flex;gap:12px;align-items:center;text-align:left;width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--card)}
+.found img,.found .noimg{flex:0 0 34px;width:34px;height:46px;border-radius:3px;object-fit:cover;background:var(--soft)}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--ink);color:var(--card);padding:12px 18px;border-radius:12px;z-index:30;max-width:90vw;display:none}
+.foot{margin-top:28px;text-align:center;font-size:12px;color:var(--sub)}
+.note{white-space:pre-wrap;word-break:break-word;margin:0}
+table.t{width:100%;border-collapse:collapse;font-size:14px}
+table.t td,table.t th{padding:8px 6px;border-bottom:1px solid var(--line);text-align:left}
+@media (max-width:560px){.headline{font-size:24px}.tower{padding:16px 10px;gap:8px}.marks{width:120px}.cmp{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <button class="brand" id="home" type="button" aria-label="처음 화면으로">
+      <svg viewBox="0 0 200 200" aria-hidden="true"><rect width="200" height="200" rx="44" fill="#F4F1EA"/><path d="M88 51H114a30 30 0 0 1 0 60H88" fill="none" stroke="#17204A" stroke-width="22"/><path d="M110 114L146 162" fill="none" stroke="#17204A" stroke-width="22" stroke-linecap="round"/><rect x="44" y="40" width="50" height="22" rx="5" fill="#FF6B5A"/><rect x="50" y="65" width="44" height="22" rx="5" fill="#FF9F45"/><rect x="40" y="90" width="54" height="22" rx="5" fill="#FFC94A"/><rect x="48" y="115" width="48" height="22" rx="5" fill="#2EC4B6"/><rect x="38" y="140" width="60" height="24" rx="5" fill="#8FA8FF"/><polygon points="64,62 73,62 73,86 68.5,81 64,86" fill="#17204A"/></svg>
+      <span><b>Read Us! 리더스</b><small id="cls"></small></span>
+    </button>
+    <div class="row" id="nav"></div>
+  </div>
+  <main id="app" aria-live="polite"></main>
+  <p class="foot">Made by 음악적체육인 · 리더스 <span id="ver"></span></p>
+</div>
+<div id="modal"></div>
+<div id="toast" role="status"></div>
+<script>
+'use strict';
+var APP = { version: '0.1.0', requiredShell: 1, s: '', ping: null, settings: null, relay: '', token: '', me: null };
+
+/* ---------- 작은 도구 ---------- */
+function $(sel, root) { return (root || document).querySelector(sel); }
+function esc(v) { return String(v === null || v === undefined ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+function toast(msg) { var t = $('#toast'); t.textContent = msg; t.style.display = 'block'; clearTimeout(toast._t); toast._t = setTimeout(function () { t.style.display = 'none'; }, 3200); }
+function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+function todayStr() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+function dueText(due) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(due || '')) return '';
+  var p = due.split('-').map(Number), d = new Date(p[0], p[1] - 1, p[2]), t = new Date(); t.setHours(0, 0, 0, 0);
+  var left = Math.round((d - t) / 86400000), day = '일월화수목금토'[d.getDay()];
+  var base = p[1] + '월 ' + p[2] + '일(' + day + ')까지';
+  return left > 0 ? base + ' · ' + left + '일 남음' : left === 0 ? base + ' · 오늘까지' : base;
+}
+function heightText(count, cm) {
+  var m = count * cm / 100;
+  if (m >= 1000) return (Math.round(m / 10) / 100) + 'km';
+  return (Math.round(m * 10) / 10) + 'm';
+}
+
+/* ---------- 학교 시트(껍데기)와 주고받기 ---------- */
+async function rpcOnce(fn, args) {
+  var res = await fetch(APP.s, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: args || [] }) });
+  if (!res.ok) { var e = new Error('학교 시트와 연결이 잠시 끊겼어요. (' + res.status + ')'); e.retry = true; throw e; }
+  var out = await res.json();
+  if (!out.ok) throw new Error(out.error || '요청을 처리하지 못했어요.');
+  return out.result;
+}
+async function rpc(fn, args) {
+  try { return await rpcOnce(fn, args); }
+  catch (e) {
+    if (!(e.retry || e instanceof TypeError)) throw e;
+    await sleep(1500);
+    try { return await rpcOnce(fn, args); } catch (e2) { throw (e2 instanceof TypeError) ? new Error('학교 시트와 연결하지 못했어요. 인터넷을 확인해 주세요.') : e2; }
+  }
+}
+async function guard(fn) { try { return await fn(); } catch (e) { toast(e.message || String(e)); return undefined; } }
+
+/* ---------- 화면 바꾸기 ---------- */
+var VIEWS = {};
+function go(view) { if (location.hash !== '#' + view) location.hash = view; else render(); }
+function render() {
+  var v = (location.hash || '#home').slice(1);
+  if (!VIEWS[v]) v = 'home';
+  $('#modal').innerHTML = '';
+  var nav = $('#nav');
+  nav.innerHTML = v === 'home'
+    ? '<button class="btn" type="button" data-go="student">책 기록하기</button><button class="btn line" type="button" data-go="admin">선생님</button>'
+    : '<button class="btn line" type="button" data-go="home">현황판</button>';
+  VIEWS[v]();
+}
+document.addEventListener('click', function (ev) {
+  var b = ev.target.closest('[data-go]');
+  if (b) { ev.preventDefault(); if (b.getAttribute('data-go') === 'admin') ADMIN.tab = 'approve'; go(b.getAttribute('data-go')); }   // 선생님 화면은 늘 승인 탭부터
+});
+$('#home').addEventListener('click', function () { go('home'); });
+window.addEventListener('hashchange', render);
+
+/* ---------- 책탑 그림 ---------- */
+var BOOKC = ['#D2604A', '#E39A4A', '#E8B84E', '#5E9C8A', '#7E9BB8', '#B8566B', '#F2E6D0'];
+var PAGE = '#FFF8EA', SHADE = '#D8CCB2', INK = '#3E2C20', CREAM = '#FFFCF6';
+function mix(c, t, k) {
+  var a = [1, 3, 5].map(function (i) { return parseInt(c.slice(i, i + 2), 16); }), b = [1, 3, 5].map(function (i) { return parseInt(t.slice(i, i + 2), 16); });
+  return '#' + a.map(function (v, i) { return Math.round(v * (1 - k) + b[i] * k).toString(16).padStart(2, '0'); }).join('');
+}
+function rng(seed) { var a = seed >>> 0; return function () { a = (a + 0x6D2B79F5) | 0; var t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function pick(r, arr) { return arr[Math.floor(r() * arr.length)]; }
+function inkOn(c) { return (c === '#D2604A' || c === '#B8566B') ? CREAM : INK; }
+// fill: 0~1 (다음 목표까지 얼마나 찼는지), titles: 책등에 적을 제목들(최근 승인된 책)
+function towerSvg(fill, titles) {
+  var W = 190, H = 500, fillPx = Math.max(0, Math.min(1, fill)) * H, r = rng(23), r2 = rng(5);
+  var hs = [], sum = 0;
+  while (fillPx - sum >= 14) { var hh = Math.min(pick(r, [16, 18, 20, 22, 26]), fillPx - sum); if (fillPx - sum - hh < 14 && fillPx - sum <= 30) hh = fillPx - sum; hs.push(hh); sum += hh; }
+  if (!hs.length && fillPx > 0) hs.push(Math.max(8, fillPx));
+  var out = ['<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="우리 반 책탑"><line x1="0" y1="1" x2="' + W + '" y2="1" stroke="#E8B84E" stroke-width="2" stroke-dasharray="6 5"/>'];
+  function lines(a, b) { var o = [], t = a + 1.4; while (t < b - 0.8) { o.push(t); t += pick(r2, [1.8, 2.2, 2.6]); } return o; }
+  var y = H, prevC = '', prevO = '', ti = 0, k = 0;
+  hs.forEach(function (h) {
+    y -= h;
+    var o = pick(r, 'SNEW'.split('').filter(function (x) { return x !== prevO; }).concat(['S'])); prevO = o;
+    var c = pick(r, BOOKC.filter(function (x) { return x !== prevC; })); prevC = c;
+    var wide = (o === 'S' || o === 'N'), w = pick(r, wide ? [108, 116, 124, 130] : [70, 76, 84]), dx = wide ? 16 : 34, dy = wide ? -8 : -17;
+    var x = Math.round((W - (w + dx)) / 2 + Math.floor(r() * 17) - 8), top = mix(c, '#FFFFFF', 0.35), cd = mix(c, INK, 0.14), CV = Math.min(3, h / 4);
+    function side(t0, t1, a, b, f) { var X = function (t) { return (x + w + dx * t).toFixed(1); }, Y = function (t, off) { return (y + dy * t + off).toFixed(1); }; return '<polygon points="' + X(t0) + ',' + Y(t0, a) + ' ' + X(t1) + ',' + Y(t1, a) + ' ' + X(t1) + ',' + Y(t1, b) + ' ' + X(t0) + ',' + Y(t0, b) + '" fill="' + f + '"/>'; }
+    out.push('<polygon points="' + x + ',' + y + ' ' + (x + w) + ',' + y + ' ' + (x + w + dx) + ',' + (y + dy) + ' ' + (x + dx) + ',' + (y + dy) + '" fill="' + top + '"/>');
+    var title = titles.length ? String(titles[ti % titles.length] || '') : '';
+    if (o === 'E') {
+      out.push(side(0, 1, 0, h, cd));
+      var st = title.replace(/\s/g, '').slice(0, 3);
+      if (st && h >= 12) { ti++; var fs = Math.min(8.5, h - 5, (dx - 5) / st.length - 1), adv = fs + 1, cu = (dx - st.length * adv) / 2 + adv / 2;
+        out.push('<g transform="matrix(1 ' + (dy / dx).toFixed(3) + ' 0 1 ' + (x + w) + ' ' + y + ')" font-family="Jua,sans-serif" font-size="' + fs.toFixed(1) + '" fill="' + inkOn(c) + '" text-anchor="middle" dominant-baseline="central" aria-hidden="true">');
+        st.split('').forEach(function (ch) { out.push('<text x="' + cu.toFixed(1) + '" y="' + (h / 2).toFixed(1) + '" transform="rotate(-90 ' + cu.toFixed(1) + ' ' + (h / 2).toFixed(1) + ')">' + esc(ch) + '</text>'); cu += adv; });
+        out.push('</g>'); }
+    } else {
+      var t0 = o === 'S' ? 0 : 0.08;
+      out.push(side(0, 1, 0, h, SHADE) + side(t0, 0.92, CV, h - CV, PAGE));
+      out.push('<path d="' + lines(y + CV, y + h - CV).map(function (yy) { return 'M' + (x + w + dx * t0).toFixed(1) + ' ' + (yy + dy * t0).toFixed(1) + 'L' + (x + w + dx * 0.92).toFixed(1) + ' ' + (yy + dy * 0.92).toFixed(1); }).join('') + '" stroke="#8A7A5C" stroke-opacity=".35" stroke-width=".6" fill="none"/>');
+      out.push(side(0, 1, 0, CV, cd) + side(0, 1, h - CV, h, cd));
+    }
+    if (o === 'S') {
+      out.push('<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="2" fill="' + c + '"/>');
+      var flip = (k % 4 === 3); k++;
+      out.push('<rect x="' + (flip ? x + w - 10.5 : x + 8) + '" y="' + y + '" width="2.5" height="' + h + '" fill="' + inkOn(c) + '" opacity=".35"/>');
+      var maxCh = Math.floor((w - 34) / 8), tt = title.length > maxCh ? title.slice(0, maxCh) : title;
+      if (tt && h >= 12) { ti++;
+        var units = tt.split('').reduce(function (a, ch) { return a + (ch === ' ' ? 0.45 : 1); }, 0), fs2 = Math.min(12, h - 5, (w - 34) / units - 1), adv2 = fs2 + 1, cy = y + h / 2, cx = flip ? x + w - 20 - fs2 : x + 20;
+        out.push('<g font-family="Jua,sans-serif" font-size="' + fs2.toFixed(1) + '" fill="' + inkOn(c) + '" text-anchor="middle" dominant-baseline="central" aria-hidden="true">');
+        tt.split('').forEach(function (ch) {
+          if (ch === ' ') { cx += (flip ? -1 : 1) * adv2 * 0.45; return; }
+          var px = (cx + fs2 / 2).toFixed(1);
+          out.push('<text x="' + px + '" y="' + cy.toFixed(1) + '" transform="rotate(' + (flip ? 90 : -90) + ' ' + px + ' ' + cy.toFixed(1) + ')">' + esc(ch) + '</text>'); cx += (flip ? -1 : 1) * adv2;
+        });
+        out.push('</g>'); }
+    } else {
+      var l = x + (o === 'W' ? 5 : 4), rr = x + w - (o === 'E' ? 5 : 4);
+      out.push('<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" fill="' + SHADE + '"/><rect x="' + l + '" y="' + (y + CV) + '" width="' + (rr - l) + '" height="' + (h - 2 * CV) + '" fill="' + PAGE + '"/>');
+      out.push('<path d="' + lines(y + CV, y + h - CV).map(function (yy) { return 'M' + l + ' ' + yy.toFixed(1) + 'H' + rr; }).join('') + '" stroke="#8A7A5C" stroke-opacity=".35" stroke-width=".6" fill="none"/>');
+      out.push('<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + CV + '" fill="' + c + '"/><rect x="' + x + '" y="' + (y + h - CV) + '" width="' + w + '" height="' + CV + '" fill="' + c + '"/>');
+      if (o === 'W') out.push('<rect x="' + x + '" y="' + y + '" width="5" height="' + h + '" fill="' + c + '"/>');
+      if (o === 'E') out.push('<rect x="' + (x + w - 5) + '" y="' + y + '" width="5" height="' + h + '" fill="' + c + '"/>');
+    }
+  });
+  out.push('</svg>');
+  return out.join('');
+}
+
+/* ---------- 목표와 비교 그림 ---------- */
+var GOALS = [
+  { m: 3, name: '교실 천장', kind: 'room' }, { m: 12, name: '학교 4층', kind: 'bld', floors: 4 }, { m: 30, name: '아파트 10층', kind: 'bld', floors: 10 },
+  { m: 75, name: '아파트 25층', kind: 'bld', floors: 25 }, { m: 249, name: '63빌딩', kind: 'sky' }, { m: 555, name: '롯데월드타워', kind: 'sky' },
+  { m: 1947, name: '한라산', kind: 'mt' }, { m: 8849, name: '에베레스트', kind: 'mt' }, { m: 100000, name: '우주', kind: 'space' }
+];
+function compareSvg(g) {
+  var W = 104, H = 500, o = ['<svg class="cmp" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="비교 대상: ' + esc(g.name) + '">'];
+  if (g.kind === 'bld') {
+    var bx = 6, bw = 78, dx = 14, dy = -7, top = 20, fh = (H - top) / g.floors;
+    o.push('<polygon points="' + (bx + bw) + ',' + top + ' ' + (bx + bw + dx) + ',' + (top + dy) + ' ' + (bx + bw + dx) + ',' + (H + dy) + ' ' + (bx + bw) + ',' + H + '" fill="#8F7B63"/><polygon points="' + bx + ',' + top + ' ' + (bx + bw) + ',' + top + ' ' + (bx + bw + dx) + ',' + (top + dy) + ' ' + (bx + dx) + ',' + (top + dy) + '" fill="#D9C7AB"/><rect x="' + bx + '" y="' + top + '" width="' + bw + '" height="' + (H - top) + '" fill="#B9A58C"/>');
+    for (var f = 0; f < g.floors; f++) {
+      var y = top + f * fh;
+      o.push('<rect x="' + bx + '" y="' + (y + fh - Math.min(3, fh * 0.12)).toFixed(1) + '" width="' + bw + '" height="' + Math.min(3, fh * 0.12).toFixed(1) + '" fill="#A08C72"/>');
+      for (var c = 0; c < 3; c++) {
+        if (f === g.floors - 1 && c === 1) { o.push('<rect x="' + (bx + 29) + '" y="' + (y + fh * 0.3).toFixed(1) + '" width="20" height="' + (fh * 0.7).toFixed(1) + '" fill="#6E5847"/>'); continue; }
+        o.push('<rect x="' + (bx + 8 + c * 23) + '" y="' + (y + fh * 0.25).toFixed(1) + '" width="16" height="' + (fh * 0.45).toFixed(1) + '" rx="1" fill="' + (((f * 3 + c) % 4 === 1) ? '#FBEBC4' : '#6E5847') + '"/>');
+      }
+    }
+  } else if (g.kind === 'room') {
+    o.push('<rect x="6" y="0" width="92" height="500" fill="#5E4636"/><rect x="6" y="0" width="92" height="10" fill="#B9A58C"/><rect x="26" y="165" width="52" height="335" rx="3" fill="#B9A58C"/><rect x="33" y="180" width="38" height="70" rx="2" fill="#FBEBC4"/><circle cx="70" cy="345" r="4" fill="#6E5847"/>');
+  } else if (g.kind === 'sky') {
+    o.push('<polygon points="52,0 70,70 76,500 28,500 34,70" fill="#B9A58C"/><polygon points="52,0 70,70 76,500 52,500" fill="#8F7B63"/>');
+    for (var i = 1; i < 16; i++) o.push('<rect x="30" y="' + (70 + i * 26) + '" width="44" height="3" fill="#6E5847" opacity=".5"/>');
+  } else if (g.kind === 'mt') {
+    o.push('<polygon points="52,0 104,500 0,500" fill="#7C8F6B"/><polygon points="52,0 104,500 52,500" fill="#5F7354"/><polygon points="52,0 70,170 58,150 50,180 42,150 34,170" fill="#FFFCF6"/>');
+  } else {
+    [[20, 40, 3], [70, 20, 2], [84, 110, 2.5], [14, 180, 2], [60, 240, 3], [90, 320, 2], [26, 380, 2.5], [72, 440, 2]].forEach(function (s) { o.push('<circle cx="' + s[0] + '" cy="' + s[1] + '" r="' + s[2] + '" fill="#FBEBC4"/>'); });
+    o.push('<circle cx="52" cy="110" r="24" fill="#E9DCC8"/><circle cx="62" cy="102" r="21" fill="#4E392B"/>');
+  }
+  o.push('</svg>');
+  return o.join('');
+}
+function goalFor(m) { for (var i = 0; i < GOALS.length; i++) if (m < GOALS[i].m) return i; return GOALS.length - 1; }
+
+/* ---------- 표지 ---------- */
+function coverHtml(b) {
+  if (b.cover) return '<img class="cover" src="' + esc(b.cover) + '" alt="" loading="lazy" referrerpolicy="no-referrer">';
+  var n = 0, t = String(b.title || ''); for (var i = 0; i < t.length; i++) n = (n * 31 + t.charCodeAt(i)) >>> 0;
+  return '<div class="cover" style="background:' + BOOKC[n % (BOOKC.length - 1)] + '" aria-hidden="true">' + esc(t.slice(0, 12)) + '</div>';
+}
+function classBookCard(c, extra) {
+  var pct = c.total ? Math.round(c.read / c.total * 100) : 0, due = dueText(c.due);
+  return '<div class="card cb">' + coverHtml(c) + '<div class="b"><div class="row" style="justify-content:space-between"><strong>' + esc(c.title) + '</strong>' + (due ? '<span class="pill">' + esc(due) + '</span>' : '') + '</div>' +
+    '<span class="muted">' + esc([c.author, c.publisher].filter(Boolean).join(' · ')) + '</span>' +
+    '<div class="bar" aria-hidden="true"><i style="width:' + pct + '%"></i></div><span>' + c.total + '명 중 <b>' + c.read + '명</b>이 읽고 기록했어요</span>' + (extra || '') + '</div></div>';
+}
+
+/* ---------- 현황판 (처음 화면) ---------- */
+VIEWS.home = async function () {
+  var app = $('#app');
+  app.innerHTML = '<p class="muted">우리 반 책탑을 불러오는 중이에요.</p>';
+  var d = await guard(function () { return rpc('getBoard'); });
+  if (!d) { app.innerHTML = '<div class="card"><p>학교 시트와 연결하지 못했어요.</p><button class="btn" type="button" id="again">다시 시도</button></div>'; $('#again').onclick = render; return; }
+  $('#cls').textContent = d.title || '';
+  var m = d.total * d.bookCm / 100, gi = goalFor(m), goal = GOALS[gi], fill = Math.min(1, m / goal.m);
+  var left = Math.max(0, Math.ceil(goal.m * 100 / d.bookCm) - d.total);
+  var marks = '<div class="goal" style="top:0"><strong>' + esc(goal.name) + ' · ' + heightText(goal.m * 100 / d.bookCm, d.bookCm) + '</strong><span>다음 목표</span></div>';
+  var nowTop = (1 - fill) * 100, used = [0, nowTop];
+  marks += '<div class="now" style="top:' + nowTop.toFixed(1) + '%"><strong>지금 여기 · ' + heightText(d.total, d.bookCm) + '</strong><span>' + d.total + '권</span></div>';
+  GOALS.slice(0, gi).reverse().forEach(function (g) {
+    var t = (1 - g.m / goal.m) * 100;
+    if (used.some(function (u) { return Math.abs(u - t) < 10; }) || t > 97) return;
+    used.push(t); marks += '<div style="top:' + t.toFixed(1) + '%"><strong>' + esc(g.name) + ' · ' + heightText(g.m * 100 / d.bookCm, d.bookCm) + '</strong><span>지남</span></div>';
+  });
+  var side = '';
+  if (d.classBooks.length) side += '<h2 style="font-size:19px">우리 반이 함께 읽는 책</h2>' + d.classBooks.map(function (c) { return classBookCard(c); }).join('');
+  if (d.ranks) {
+    var max = Math.max.apply(null, d.ranks.map(function (r) { return r.count; }).concat([1]));
+    side += '<div class="card stack"><strong style="font-size:17px">친구들이 쌓은 책</strong>' + (d.ranks.length ? d.ranks.slice(0, 10).map(function (r, i) {
+      return '<div class="rank"><span>' + esc(r.name) + '</span><div class="bar" aria-hidden="true"><i style="width:' + Math.round(r.count / max * 100) + '%;background:' + BOOKC[i % 6] + '"></i></div><b>' + r.count + '권</b></div>';
+    }).join('') + (d.ranks.length > 10 ? '<span class="muted">그 외 ' + (d.ranks.length - 10) + '명</span>' : '') : '<span class="muted">아직 등록된 학생이 없어요.</span>') + '<span class="muted">선생님이 승인한 책만 쌓여요</span></div>';
+  }
+  if (d.recent.length) side += '<div class="card"><span class="muted">방금 쌓인 책</span><br><strong>' + esc(d.recent[0].title) + (d.recent[0].name ? ' · ' + esc(d.recent[0].name) : '') + '</strong></div>';
+  if (!side) side = '<div class="card"><strong>아직 쌓인 책이 없어요</strong><p class="muted">책을 읽고 "책 기록하기"로 첫 책을 올려 보세요.</p></div>';
+  app.innerHTML = '<div class="row" style="justify-content:space-between;margin-bottom:14px"><h1 class="headline">우리 반 책탑 ' + d.total + '권 · ' + heightText(d.total, d.bookCm) + '</h1>' +
+    '<strong>' + (left > 0 ? esc(goal.name) + '까지 ' + left + '권 남았어요' : esc(goal.name) + '에 닿았어요') + '</strong></div>' +
+    '<div class="grid2"><div class="tower">' + towerSvg(fill, d.recent.map(function (r) { return r.title; })) + compareSvg(goal) + '<div class="marks">' + marks + '</div></div><div class="side">' + side + '</div></div>';
+};
+
+/* ---------- 책 검색 (중계기) ---------- */
+async function searchBooks(q) {
+  var res = await fetch(APP.relay + (APP.relay.indexOf('?') < 0 ? '?' : '&') + 'q=' + encodeURIComponent(q));
+  var out = await res.json();
+  if (!out.ok) throw new Error(out.error || '책 검색이 안 돼요.');
+  return out.books || [];
+}
+function searchBox(prefix) {
+  if (!APP.relay) return '';
+  return '<label class="f" for="' + prefix + 'q">책 찾기 (없으면 아래에 직접 적어도 돼요)</label><div class="row" style="flex-wrap:nowrap"><input class="in" id="' + prefix + 'q" type="search" autocomplete="off"><button class="btn line small" type="button" id="' + prefix + 'find" style="white-space:nowrap">찾기</button></div><div class="stack" id="' + prefix + 'found" style="margin-top:8px"></div>';
+}
+function wireSearch(prefix, onPick) {
+  var q = $('#' + prefix + 'q'); if (!q) return;
+  async function run() {
+    var v = q.value.trim(); if (!v) return;
+    var box = $('#' + prefix + 'found'); box.innerHTML = '<span class="muted">찾는 중이에요.</span>';
+    try {
+      var list = await searchBooks(v);
+      box.innerHTML = list.length ? '' : '<span class="muted">찾은 책이 없어요. 아래에 직접 적어 주세요.</span>';
+      list.forEach(function (b) {
+        var el = document.createElement('button'); el.type = 'button'; el.className = 'found';
+        el.innerHTML = (b.cover ? '<img src="' + esc(b.cover) + '" alt="" referrerpolicy="no-referrer">' : '<span class="noimg"></span>') + '<span><strong>' + esc(b.title) + '</strong><br><span class="muted">' + esc([b.author, b.publisher].filter(Boolean).join(' · ')) + '</span></span>';
+        el.onclick = function () { box.innerHTML = ''; onPick(b); };
+        box.appendChild(el);
+      });
+    } catch (e) { box.innerHTML = '<span class="muted">' + esc(e.message) + '</span>'; }
+  }
+  $('#' + prefix + 'find').onclick = run;
+  q.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); run(); } });
+}
+
+/* ---------- 학생 화면 ---------- */
+function countNote(note, kind) {
+  if (kind === 'char') return note.replace(/\s/g, '').length;
+  return note.split(/[.!?。…\n]+/).filter(function (s) { return s.trim().length >= 2; }).length;
+}
+VIEWS.student = async function () {
+  var app = $('#app');
+  if (!APP.me) {
+    app.innerHTML = '<p class="muted">이름을 불러오는 중이에요.</p>';
+    var list = await guard(function () { return rpc('getStudentsPublic'); });
+    if (!list) return;
+    app.innerHTML = '<h1 style="font-size:24px;margin-bottom:12px">누구인가요?</h1>' + (list.length ? '<div class="names">' + list.map(function (s) {
+      return '<button class="name" type="button" data-id="' + esc(s.id) + '" data-lock="' + (s.lock ? 1 : 0) + '" data-name="' + esc(s.name) + '">' + esc(s.name) + '<small>' + esc(s.number) + '번</small></button>';
+    }).join('') + '</div>' : '<div class="card">아직 등록된 학생이 없어요. 선생님께 말씀드려 주세요.</div>');
+    app.querySelectorAll('.name').forEach(function (b) {
+      b.onclick = function () {
+        var id = b.dataset.id;
+        if (b.dataset.lock === '1') {
+          $('#modal').innerHTML = '<div class="shade"><form class="sheet" id="pwf"><h2>' + esc(b.dataset.name) + '</h2><label class="f" for="pw">비밀번호</label><input class="in" id="pw" type="password" autocomplete="off" inputmode="numeric"><button class="btn wide" type="submit">들어가기</button><button class="btn line wide" type="button" id="pwx">취소</button></form></div>';
+          $('#pw').focus(); $('#pwx').onclick = function () { $('#modal').innerHTML = ''; };
+          $('#pwf').onsubmit = function (ev) { ev.preventDefault(); enter(id, $('#pw').value); };
+        } else enter(id, '');
+      };
+    });
+    return;
+  }
+  var me = APP.me, d = await guard(function () { return rpc('getMyBooks', [me.id, me.pw]); });
+  if (!d) { APP.me = null; return; }
+  var cm = APP.ping.bookCm, rule = APP.settings.rule;
+  var cbs = d.classBooks.map(function (c) {
+    var st = c.my === 'approved' ? '<span class="pill ok">읽었어요 · 승인됨</span>' : c.my === 'pending' ? '<span class="pill wait">읽었어요 · 승인 대기</span>' : '<button class="btn small" type="button" data-cb="' + esc(c.id) + '">다 읽었어요 · 감상 쓰기</button>';
+    return classBookCard(c, '<div>' + st + '</div>');
+  }).join('');
+  app.innerHTML =
+    '<div class="row" style="justify-content:space-between;margin-bottom:12px"><h1 style="font-size:24px">' + esc(d.student.name) + '의 책탑</h1><button class="btn line small" type="button" id="out">다른 사람으로</button></div>' +
+    '<div class="grid2"><div class="stack" style="flex:1 1 320px;min-width:0">' +
+    '<div class="card dark"><span class="muted">내가 쌓은 책탑</span><div style="font-size:28px;font-weight:900">' + d.approved + '권 · ' + heightText(d.approved, cm) + '</div>' + (d.pending ? '<span class="pill wait" style="color:#3E2C20">승인 대기 ' + d.pending + '권</span>' : '') + '</div>' +
+    (cbs ? '<h2 style="font-size:19px">우리 반이 함께 읽는 책</h2>' + cbs : '') +
+    '</div><div class="stack" style="flex:1 1 320px;min-width:0">' +
+    '<form class="card" id="rec"><strong style="font-size:17px">읽은 책 기록하기</strong><div id="cbnote"></div>' + searchBox('s') +
+    '<label class="f" for="t">책 제목</label><input class="in" id="t" maxlength="100" required autocomplete="off">' +
+    '<div class="row" style="flex-wrap:nowrap;gap:10px"><div style="flex:1"><label class="f" for="a">지은이</label><input class="in" id="a" maxlength="60" autocomplete="off"></div><div style="flex:1"><label class="f" for="p">출판사</label><input class="in" id="p" maxlength="60" autocomplete="off"></div></div>' +
+    '<label class="f" for="n">감상</label><textarea class="in" id="n" maxlength="2000"></textarea>' +
+    '<button class="btn wide" type="submit" style="margin-top:12px">선생님께 보내기</button></form>' +
+    '<div class="card stack"><strong style="font-size:17px">내 기록</strong>' + (d.books.length ? d.books.map(function (b) {
+      var p = b.status === 'approved' ? '<span class="pill ok">승인됨 +' + cm + 'cm</span>' : b.status === 'returned' ? '<span class="pill back">다시 써 오기</span>' : '<span class="pill wait">승인 대기</span>';
+      return '<div><div class="row" style="justify-content:space-between;flex-wrap:nowrap"><span><strong>' + esc(b.title) + '</strong><br><span class="muted">' + esc([b.author, b.publisher].filter(Boolean).join(' · ')) + '</span></span>' + p + '</div>' +
+        (b.status === 'returned' ? '<p class="muted" style="margin:6px 0">' + esc(b.memo ? '선생님: ' + b.memo : '감상을 조금 더 써서 다시 보내 주세요.') + '</p><button class="btn line small" type="button" data-rw="' + esc(b.rid) + '">감상 고쳐 쓰기</button>' : '') + '</div>';
+    }).join('') : '<span class="muted">아직 기록이 없어요.</span>') + '</div></div></div>';
+  var picked = { classBookId: '', cover: '' };
+  $('#out').onclick = function () { APP.me = null; render(); };
+  wireSearch('s', function (b) { $('#t').value = b.title; $('#a').value = b.author; $('#p').value = b.publisher; picked.cover = b.cover; picked.classBookId = ''; $('#cbnote').innerHTML = ''; $('#n').focus(); });
+  app.querySelectorAll('[data-cb]').forEach(function (btn) {
+    btn.onclick = function () {
+      var c = d.classBooks.filter(function (x) { return x.id === btn.dataset.cb; })[0];
+      $('#t').value = c.title; $('#a').value = c.author; $('#p').value = c.publisher; picked.classBookId = c.id; picked.cover = c.cover;
+      $('#cbnote').innerHTML = '<span class="pill" style="margin-top:8px">함께 읽는 책</span>'; $('#n').focus(); $('#rec').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+  });
+  $('#t').addEventListener('input', function () { if (picked.classBookId) { picked.classBookId = ''; $('#cbnote').innerHTML = ''; } picked.cover = ''; });
+  app.querySelectorAll('[data-rw]').forEach(function (btn) {
+    btn.onclick = function () {
+      var b = d.books.filter(function (x) { return x.rid === btn.dataset.rw; })[0];
+      $('#modal').innerHTML = '<div class="shade"><form class="sheet" id="rwf"><h2>' + esc(b.title) + '</h2><label class="f" for="rwn">감상</label><textarea class="in" id="rwn" maxlength="2000" style="min-height:160px"></textarea><button class="btn wide" type="submit">다시 보내기</button><button class="btn line wide" type="button" id="rwx">취소</button></form></div>';
+      $('#rwn').value = b.note; $('#rwn').focus(); $('#rwx').onclick = function () { $('#modal').innerHTML = ''; };
+      $('#rwf').onsubmit = async function (ev) { ev.preventDefault(); var ok = await guard(function () { return rpc('rewriteBook', [me.id, me.pw, b.rid, $('#rwn').value]); }); if (ok) { toast('다시 보냈어요.'); render(); } };
+    };
+  });
+  async function send() {
+    var btn = $('#rec button[type=submit]'); btn.disabled = true;
+    var ok = await guard(function () { return rpc('addBook', [me.id, me.pw, { title: $('#t').value, author: $('#a').value, publisher: $('#p').value, note: $('#n').value, classBookId: picked.classBookId, cover: picked.cover }]); });
+    btn.disabled = false;
+    if (ok) { $('#modal').innerHTML = ''; toast('선생님께 보냈어요. 승인되면 책탑에 쌓여요.'); render(); }
+  }
+  $('#rec').onsubmit = function (ev) {
+    ev.preventDefault();
+    if (!$('#t').value.trim()) { toast('책 제목을 적어 주세요.'); return; }
+    var have = countNote($('#n').value, rule.kind);
+    if (!rule.on || have >= rule.min) { send(); return; }
+    var unit = rule.kind === 'char' ? '글자' : '문장';
+    $('#modal').innerHTML = '<div class="shade"><div class="sheet" role="dialog" aria-labelledby="ndt"><h2 id="ndt">보내기 전에 한 번 더</h2>' +
+      '<div style="background:var(--butter);border-radius:12px;padding:12px 14px"><span class="muted">선생님이 정한 감상 기준</span><br><strong>' + rule.min + unit + ' 이상 · 지금은 ' + have + unit + '이에요</strong></div>' +
+      (rule.questions.length ? '<strong style="font-size:14px">이런 이야기를 더 써 볼 수 있어요</strong>' + rule.questions.map(function (q, i) { return '<button class="q" type="button" data-q="' + i + '">' + esc(q) + '</button>'; }).join('') : '') +
+      '<button class="btn wide" type="button" id="more">조금 더 써 볼게요</button><button class="btn line wide" type="button" id="asis">이대로 보낼게요</button></div></div>';
+    function back() { $('#modal').innerHTML = ''; $('#n').focus(); }
+    $('#more').onclick = back; $('#asis').onclick = send;
+    $('#modal').querySelectorAll('[data-q]').forEach(function (qb) { qb.onclick = back; });
+  };
+};
+async function enter(id, pw) {
+  var ok = await guard(function () { return rpc('getMyBooks', [id, pw]); });
+  if (!ok) return;
+  APP.me = { id: id, pw: pw }; $('#modal').innerHTML = ''; render();
+}
+
+/* ---------- 선생님 화면 ---------- */
+var ADMIN = { tab: 'approve', data: null };
+VIEWS.admin = async function () {
+  var app = $('#app');
+  if (!APP.token) {
+    app.innerHTML = '<form class="card" id="lg" style="max-width:420px;margin:0 auto"><h1 style="font-size:22px">선생님 로그인</h1><label class="f" for="apw">비밀번호</label><input class="in" id="apw" type="password" autocomplete="current-password"><button class="btn wide" type="submit" style="margin-top:12px">들어가기</button><p class="muted">처음 비밀번호는 1234 입니다. 들어간 뒤 설정에서 바꿔 주세요.</p></form>';
+    $('#apw').focus();
+    $('#lg').onsubmit = async function (ev) {
+      ev.preventDefault();
+      var r = await guard(function () { return rpc('verifyAdminPassword', [$('#apw').value]); });
+      if (!r) return;
+      if (!r.ok) { toast(r.message); return; }
+      APP.token = r.token; APP.pwDefault = !!r.isDefault; try { sessionStorage.setItem('ru_token|' + APP.s, r.token); } catch (e) {}
+      render();
+    };
+    return;
+  }
+  var d = await guard(function () { return rpc('getAllDataAdmin', [APP.token]); });
+  if (!d) { APP.token = ''; try { sessionStorage.removeItem('ru_token|' + APP.s); } catch (e) {} render(); return; }
+  ADMIN.data = d; APP.settings = d.settings;
+  var pend = d.books.filter(function (b) { return b.status === 'pending'; });
+  var tabs = [['approve', '승인' + (pend.length ? ' ' + pend.length : '')], ['class', '학급 도서'], ['students', '학생'], ['set', '설정']];
+  app.innerHTML = '<div class="tabs" role="tablist">' + tabs.map(function (t) { return '<button class="tab" type="button" role="tab" aria-selected="' + (ADMIN.tab === t[0]) + '" data-tab="' + t[0] + '">' + t[1] + '</button>'; }).join('') + '</div><div id="pane"></div>';
+  app.querySelectorAll('[data-tab]').forEach(function (b) { b.onclick = function () { ADMIN.tab = b.dataset.tab; render(); }; });
+  ADMIN_TABS[ADMIN.tab]($('#pane'), d, pend);
+};
+function stuName(d, sid) { var s = d.students.filter(function (x) { return x.id === sid; })[0]; return s ? s.number + '번 ' + s.name : '(지워진 학생)'; }
+async function act(fn, args, msg) { var r = await guard(function () { return rpc(fn, [APP.token].concat(args)); }); if (r) { if (msg) toast(msg); render(); } return r; }
+var ADMIN_TABS = {
+  approve: function (el, d, pend) {
+    var rule = d.settings.rule, unit = rule.kind === 'char' ? '글자' : '문장';
+    el.innerHTML = '<div class="row" style="justify-content:space-between;margin-bottom:12px"><h1 style="font-size:24px">승인 대기 ' + pend.length + '건</h1>' + (pend.length ? '<button class="btn" type="button" id="all">모두 승인</button>' : '') + '</div>' +
+      (pend.length ? '<div class="stack">' + pend.map(function (b) {
+        var short = rule.on && countNote(b.note, rule.kind) < rule.min;
+        return '<div class="card stack" data-rid="' + esc(b.rid) + '"><div class="row" style="justify-content:space-between"><strong style="font-size:17px">' + esc(b.title) + '</strong><span class="muted">' + esc(stuName(d, b.sid)) + ' · ' + esc(b.date) + '</span></div>' +
+          '<span class="muted">' + esc([b.author, b.publisher].filter(Boolean).join(' · ')) + (b.classBookId ? ' · 함께 읽는 책' : '') + '</span><p class="note">' + (b.note ? esc(b.note) : '<span class="muted">(감상을 적지 않았어요)</span>') + '</p>' +
+          (short ? '<div><span class="pill wait">기준보다 짧음 (' + rule.min + unit + ' 이상)</span></div>' : '') +
+          '<div class="row"><button class="btn small" type="button" data-ok>승인 (+1권)</button><button class="btn line small" type="button" data-back>다시 써 오기</button><button class="btn line small" type="button" data-del>지우기</button></div></div>';
+      }).join('') + '</div>' : '<div class="card muted">기다리는 기록이 없어요.</div>');
+    if (pend.length) $('#all').onclick = function () { act('approveBooks', [pend.map(function (b) { return b.rid; })], pend.length + '권을 승인했어요.'); };
+    el.querySelectorAll('[data-rid]').forEach(function (card) {
+      var rid = card.dataset.rid;
+      $('[data-ok]', card).onclick = function () { act('approveBooks', [[rid]], '승인했어요.'); };
+      $('[data-del]', card).onclick = function () { if (confirm('이 기록을 지울까요? 되돌릴 수 없어요.')) act('deleteBook', [rid], '지웠어요.'); };
+      $('[data-back]', card).onclick = function () {
+        $('#modal').innerHTML = '<div class="shade"><form class="sheet" id="bk"><h2>다시 써 오기</h2><label class="f" for="memo">아이에게 남길 말 (비워 두어도 돼요)</label><input class="in" id="memo" maxlength="200" autocomplete="off"><button class="btn wide" type="submit">돌려보내기</button><button class="btn line wide" type="button" id="bkx">취소</button></form></div>';
+        $('#memo').focus(); $('#bkx').onclick = function () { $('#modal').innerHTML = ''; };
+        $('#bk').onsubmit = function (ev) { ev.preventDefault(); act('returnBook', [rid, $('#memo').value], '돌려보냈어요.'); };
+      };
+    });
+  },
+  class: function (el, d) {
+    var ok = d.books.filter(function (b) { return b.status === 'approved'; });
+    el.innerHTML = '<h1 style="font-size:24px;margin-bottom:12px">학급 도서 · 우리 반이 함께 읽는 책</h1><div class="grid2"><div class="stack" style="flex:3 1 420px;min-width:0" id="cbl">' +
+      (d.classBooks.length ? d.classBooks.map(function (c) {
+        var readers = {}; ok.forEach(function (b) { if (b.classBookId === c.id) readers[b.sid] = 1; });
+        var unread = d.students.filter(function (s) { return !readers[s.id]; });
+        c.read = d.students.length - unread.length; c.total = d.students.length;
+        return classBookCard(c, '<details><summary style="cursor:pointer;min-height:32px">아직 안 읽은 친구 ' + unread.length + '명 (선생님만 보여요)</summary><p class="muted" style="margin:6px 0">' + (unread.length ? esc(unread.map(function (s) { return s.name; }).join(', ')) : '모두 읽었어요.') + '</p></details><div><button class="btn line small" type="button" data-rm="' + esc(c.id) + '">학급 도서에서 빼기</button></div>');
+      }).join('') : '<div class="card muted">아직 정한 책이 없어요. 오른쪽에서 정해 보세요.</div>') + '</div>' +
+      '<form class="card" id="cbf" style="flex:1 1 280px">' + '<strong style="font-size:17px">학급 도서 정하기</strong>' + searchBox('c') +
+      '<label class="f" for="ct">책 제목</label><input class="in" id="ct" maxlength="100" required autocomplete="off"><label class="f" for="ca">지은이</label><input class="in" id="ca" maxlength="60" autocomplete="off"><label class="f" for="cp">출판사</label><input class="in" id="cp" maxlength="60" autocomplete="off">' +
+      '<label class="f" for="cd">언제까지 읽을까요 (비워 두어도 돼요)</label><input class="in" id="cd" type="date" min="' + todayStr() + '"><button class="btn wide" type="submit" style="margin-top:12px">학급 도서로 정하기</button>' +
+      '<p class="muted">권하는 책이지 숙제가 아니에요. 기한이 지나도 아이들은 그대로 기록할 수 있습니다.</p></form></div>';
+    var cover = '';
+    wireSearch('c', function (b) { $('#ct').value = b.title; $('#ca').value = b.author; $('#cp').value = b.publisher; cover = b.cover; });
+    $('#ct').addEventListener('input', function () { cover = ''; });
+    $('#cbf').onsubmit = function (ev) { ev.preventDefault(); act('addClassBook', [{ title: $('#ct').value, author: $('#ca').value, publisher: $('#cp').value, due: $('#cd').value, cover: cover }], '학급 도서로 정했어요.'); };
+    el.querySelectorAll('[data-rm]').forEach(function (b) { b.onclick = function () { if (confirm('학급 도서에서 뺄까요? 아이들이 쓴 기록은 그대로 남아요.')) act('removeClassBook', [b.dataset.rm], '뺐어요.'); }; });
+  },
+  students: function (el, d) {
+    var cnt = {}; d.books.forEach(function (b) { if (b.status === 'approved') cnt[b.sid] = (cnt[b.sid] || 0) + 1; });
+    el.innerHTML = '<h1 style="font-size:24px;margin-bottom:12px">학생 ' + d.students.length + '명</h1><div class="grid2"><div class="card" style="flex:3 1 420px;min-width:0;overflow:auto">' +
+      (d.students.length ? '<table class="t"><thead><tr><th>학년</th><th>반</th><th>번호</th><th>이름</th><th>승인된 책</th><th>비밀번호</th><th></th></tr></thead><tbody>' + d.students.map(function (s) {
+        return '<tr data-sid="' + esc(s.id) + '"><td>' + esc(s.grade) + '</td><td>' + esc(s.cls) + '</td><td>' + esc(s.number) + '</td><td>' + esc(s.name) + '</td><td>' + (cnt[s.id] || 0) + '권</td><td><button class="btn line small" type="button" data-pw>' + (s.lock ? '바꾸기' : '정하기') + '</button></td><td><button class="btn line small" type="button" data-rm>지우기</button></td></tr>';
+      }).join('') + '</tbody></table>' : '<span class="muted">아직 등록된 학생이 없어요.</span>') + '</div>' +
+      '<form class="card" id="bulk" style="flex:1 1 280px"><strong style="font-size:17px">학생 한꺼번에 등록</strong><label class="f" for="bt">한 줄에 한 명: 학년 반 번호 이름 (엑셀에서 복사해 붙여도 돼요)</label><textarea class="in" id="bt" style="min-height:180px" placeholder="5 1 1 김하늘&#10;5 1 2 이도윤"></textarea><button class="btn wide" type="submit" style="margin-top:12px">등록하기</button></form></div>';
+    $('#bulk').onsubmit = function (ev) {
+      ev.preventDefault();
+      var rows = $('#bt').value.split(/\n/).map(function (l) { return l.trim().split(/[\t, ]+/); }).filter(function (p) { return p.length >= 4 && p[3]; })
+        .map(function (p) { return { grade: p[0], cls: p[1], number: p[2], name: p.slice(3).join(' ') }; });
+      if (!rows.length) { toast('"학년 반 번호 이름" 순서로 적어 주세요.'); return; }
+      act('addStudentsBulk', [rows], rows.length + '명을 등록했어요.');
+    };
+    el.querySelectorAll('[data-sid]').forEach(function (tr) {
+      var sid = tr.dataset.sid;
+      $('[data-rm]', tr).onclick = function () { if (confirm('이 학생과 학생의 책 기록을 모두 지울까요? 되돌릴 수 없어요.')) act('deleteStudent', [sid], '지웠어요.'); };
+      $('[data-pw]', tr).onclick = function () {
+        $('#modal').innerHTML = '<div class="shade"><form class="sheet" id="spw"><h2>학생 비밀번호</h2><label class="f" for="np">새 비밀번호 (비워 두면 비밀번호 없이 들어가요)</label><input class="in" id="np" autocomplete="off" maxlength="20"><button class="btn wide" type="submit">저장</button><button class="btn line wide" type="button" id="spx">취소</button></form></div>';
+        $('#np').focus(); $('#spx').onclick = function () { $('#modal').innerHTML = ''; };
+        $('#spw').onsubmit = function (ev) { ev.preventDefault(); act('updateStudent', [sid, { password: $('#np').value }], '저장했어요.'); };
+      };
+    });
+  },
+  set: function (el, d) {
+    var r = d.settings.rule, link = location.origin + location.pathname + '?s=' + encodeURIComponent(APP.s);
+    el.innerHTML = '<h1 style="font-size:24px;margin-bottom:12px">설정</h1><div class="grid2">' +
+      '<form class="card" id="rf" style="flex:1 1 320px"><strong style="font-size:17px">감상 기준</strong>' +
+      '<label class="row" style="min-height:44px;font-weight:700;margin-top:6px"><input type="checkbox" id="ron" style="width:22px;height:22px"' + (r.on ? ' checked' : '') + '> 보내기 전에 한 번 더 생각하게 하기</label>' +
+      '<div class="row" style="flex-wrap:nowrap;gap:10px"><div style="flex:1"><label class="f" for="rk">기준 종류</label><select class="in" id="rk"><option value="sentence"' + (r.kind === 'sentence' ? ' selected' : '') + '>문장 수</option><option value="char"' + (r.kind === 'char' ? ' selected' : '') + '>글자 수</option></select></div><div style="flex:1"><label class="f" for="rm">최소</label><input class="in" id="rm" type="number" min="1" max="2000" value="' + r.min + '"></div></div>' +
+      '<label class="f" for="rq">아이들에게 보여 줄 생각 질문 (한 줄에 하나, 5개까지)</label><textarea class="in" id="rq">' + esc(r.questions.join('\n')) + '</textarea>' +
+      '<p class="muted">기준에 못 미쳐도 아이는 그대로 보낼 수 있어요. 승인 화면에 "기준보다 짧음" 표시만 붙습니다.</p><button class="btn wide" type="submit">저장</button></form>' +
+      '<div class="stack" style="flex:1 1 320px;min-width:0"><div class="card"><strong style="font-size:17px">현황판</strong><label class="row" style="min-height:44px;font-weight:700;margin-top:6px"><input type="checkbox" id="sn" style="width:22px;height:22px"' + (d.settings.showNames ? ' checked' : '') + '> 친구 이름과 권수 보이기</label><p class="muted">끄면 현황판에는 우리 반 전체 책탑만 보여요.</p></div>' +
+      '<div class="card"><strong style="font-size:17px">학생에게 알려 줄 주소</strong><input class="in" id="lk" readonly value="' + esc(link) + '" style="margin-top:8px"><button class="btn line small" type="button" id="cp" style="margin-top:8px">주소 복사</button></div>' +
+      '<form class="card" id="pf"><strong style="font-size:17px">선생님 비밀번호 바꾸기</strong>' + (APP.pwDefault ? '<p class="pill wait" style="margin:8px 0 0">아직 처음 비밀번호(1234)예요. 바꿔 주세요.</p>' : '') + '<label class="f" for="npw">새 비밀번호 (4자 이상)</label><input class="in" id="npw" type="password" autocomplete="new-password"><button class="btn line wide" type="submit" style="margin-top:10px">바꾸기</button></form>' +
+      '<div class="card"><a href="' + esc(d.sheetUrl) + '" target="_blank" rel="noopener">우리 반 시트 열기</a><p class="muted">껍데기 ' + d.shell + '판 · 화면 ' + APP.version + '</p><button class="btn line small" type="button" id="lo">로그아웃</button></div></div></div>';
+    $('#rf').onsubmit = function (ev) { ev.preventDefault(); act('setSettings', [{ rule: { on: $('#ron').checked, kind: $('#rk').value, min: Number($('#rm').value) || 1, questions: $('#rq').value.split(/\n/).map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 5) } }], '저장했어요.'); };
+    $('#sn').onchange = function () { act('setSettings', [{ showNames: $('#sn').checked }], '저장했어요.'); };
+    $('#cp').onclick = function () { var i = $('#lk'); i.select(); (navigator.clipboard ? navigator.clipboard.writeText(i.value) : Promise.reject()).then(function () { toast('주소를 복사했어요.'); }, function () { toast('주소를 길게 눌러 복사해 주세요.'); }); };
+    $('#pf').onsubmit = async function (ev) { ev.preventDefault(); var r2 = await guard(function () { return rpc('changeAdminPassword', [APP.token, $('#npw').value]); }); if (!r2) return; if (!r2.ok) { toast(r2.message); return; } APP.pwDefault = false; toast('비밀번호를 바꿨어요.'); render(); };
+    $('#lo').onclick = function () { APP.token = ''; try { sessionStorage.removeItem('ru_token|' + APP.s); } catch (e) {} go('home'); };
+  }
+};
+
+/* ---------- 시작 ---------- */
+function connectScreen(msg) {
+  $('#nav').innerHTML = '';
+  $('#app').innerHTML = '<form class="card" id="cn" style="max-width:560px;margin:0 auto"><h1 style="font-size:22px">학교 시트와 연결하기</h1><p>' + esc(msg || '선생님이 알려 준 주소로 들어오면 바로 열려요. 처음 설치하는 선생님은 껍데기를 배포하고 받은 주소(…/exec)를 아래에 붙여 넣어 주세요.') + '</p><label class="f" for="su">껍데기 주소</label><input class="in" id="su" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off"><button class="btn wide" type="submit" style="margin-top:12px">연결</button><p class="muted"><a href="https://github.com/MusicalPE/readus#readme" target="_blank" rel="noopener">설치 방법 보기</a></p></form>';
+  $('#cn').onsubmit = function (ev) {
+    ev.preventDefault();
+    var u = $('#su').value.trim();
+    if (!/^https:\/\/script\.google\.com\/.+\/exec$/.test(u) && !/^http:\/\/localhost[:/]/.test(u)) { toast('…/exec 로 끝나는 껍데기 주소를 넣어 주세요.'); return; }
+    location.search = '?s=' + encodeURIComponent(u);
+  };
+}
+async function start() {
+  $('#ver').textContent = APP.version;
+  var q = new URLSearchParams(location.search), s = q.get('s') || '';
+  try { if (!s) s = localStorage.getItem('ru_shell') || ''; } catch (e) {}
+  if (!s) { connectScreen(); return; }
+  APP.s = s;
+  try {
+    var got = await Promise.all([rpc('ping'), rpc('getSettings')]);
+    APP.ping = got[0]; APP.settings = got[1];
+  } catch (e) { connectScreen('학교 시트와 연결하지 못했어요. 주소를 다시 확인해 주세요. (' + (e.message || e) + ')'); return; }
+  try { localStorage.setItem('ru_shell', s); APP.token = sessionStorage.getItem('ru_token|' + s) || ''; } catch (e) {}
+  $('#cls').textContent = APP.ping.title || '';
+  if (APP.ping.shell < APP.requiredShell) toast('껍데기를 새 판으로 바꿔야 해요. 선생님께 알려 주세요.');
+  try { var rj = await (await fetch('relay.json', { cache: 'no-cache' })).json(); if (/^https?:\/\//.test(rj.relay || '')) APP.relay = rj.relay; } catch (e) {}
+  render();
+}
+start();
+</script>
+</body>
+</html>

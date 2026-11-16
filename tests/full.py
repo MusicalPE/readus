@@ -137,6 +137,34 @@ try:
         ok('새 비밀번호로 로그인', pg.locator('.mi').count() == 8)
         pg.click('[data-go=home]'); pg.wait_for_selector('h1.headline'); pg.click('[data-go=student]'); pg.wait_for_selector('#rec')
 
+        # 10-3. 껍데기 2판 기능: 학급 이름, 승인 전 기록 지우기, 기록 고치기, 저장칸, 초기화
+        def call(fn, *args):
+            req = urllib.request.Request(BASE + '/exec', data=json.dumps({'fn': fn, 'args': list(args)}).encode(), method='POST')
+            return json.load(urllib.request.urlopen(req))
+        pg.fill('#t', '지울 책'); pg.fill('#n', '지울 기록이다. 잘못 올렸다. 다시 올릴 것이다. 그래서 지운다. 정말이다.'); pg.click('#rec button[type=submit]')
+        pg.wait_for_selector('[data-dm]'); n1 = len(state()['Books']); pg.click('[data-dm]'); pg.wait_for_function("!document.querySelector('[data-dm]')")
+        ok('학생이 승인 전 기록을 지움', len(state()['Books']) == n1 - 1)
+        pg.click('[data-go=home]'); pg.wait_for_selector('h1.headline'); pg.click('[data-go=admin]'); pg.wait_for_selector('.menu'); pg.click('[data-tab=board]')
+        pg.fill('#cn', '우리학교 독서기록장'); pg.click('#cnf button[type=submit]'); pg.wait_for_function("document.querySelector('#cls').textContent === '우리학교 독서기록장'")
+        pg.click('[data-go=home]'); pg.wait_for_selector('h1.headline')
+        ok('학급 이름을 정하면 화면 이름이 바뀜', pg.inner_text('#cls') == '우리학교 독서기록장')
+        tok = call('verifyAdminPassword', 'abcd')['result']['token']
+        rid = state()['Books'][1][0]
+        call('updateBookAdmin', tok, rid, {'title': '고친 제목', 'pages': 120, 'extra': {'star': 5}})
+        row = state()['Books'][1]
+        ok('선생님이 기록을 고침 (제목·쪽수·덧붙임)', row[4] == '고친 제목' and row[12] == '120' and json.loads(row[13]) == {'star': 5})
+        ok('전국판 보고는 설정 전에는 꺼져 있음', call('natReport')['result'] == {'ok': False, 'off': True})
+        ok('선생님만 보는 저장칸은 로그인 없이 못 읽음', call('getPrivateAdmin', 'x')['ok'] is False)
+        call('setPrivate', tok, {'nat': {'on': True, 'key': 'k1', 'collector': 'https://script.google.com/macros/s/abc/exec', 'name': '햇살초'}})
+        ok('저장칸 쓰기·읽기, 설정하면 보고가 나감', call('getPrivateAdmin', tok)['result']['nat']['key'] == 'k1' and call('natReport')['result']['ok'] is True and 'k1' not in json.dumps(call('getSettings')) + json.dumps(call('getBoard')))
+        call('setSettings', tok, {'extra': {'theme': 'wood'}})
+        ok('자유 저장칸과 날짜별 권수', call('getSettings')['result']['extra'] == {'theme': 'wood'} and sum(call('getBoard')['result']['days'].values()) == 2)
+        pg.click('[data-go=admin]'); pg.wait_for_selector('.menu'); pg.click('[data-tab=pw]'); pg.click('#rs'); pg.fill('#rsw', '아니'); pg.click('#rsf button[type=submit]'); pg.wait_for_timeout(200)
+        ok('초기화는 "지우기"를 적어야 함', len(state()['Books']) > 1)
+        pg.fill('#rsw', '지우기'); pg.click('#rsf button[type=submit]'); pg.wait_for_function("!document.querySelector('.shade')"); pg.wait_for_timeout(300)
+        ok('책 기록 초기화 (학생·학급 도서는 남음)', len(state()['Books']) == 1 and len(state()['Students']) == 4 and len(state()['ClassBooks']) == 2)
+        pg.click('[data-go=home]'); pg.wait_for_selector('h1.headline'); pg.click('[data-go=student]'); pg.wait_for_selector('#rec')
+
         # 11. 새로 고쳐도 이어지는지, 좁은 화면
         pg.reload(); pg.wait_for_selector('.name, #rec')
         pg.set_viewport_size({'width': 390, 'height': 844}); pg.goto(URL + '#home'); pg.wait_for_selector('.tower svg')

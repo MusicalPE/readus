@@ -131,7 +131,7 @@ table.t td,table.t th{padding:8px 6px;border-bottom:1px solid var(--line);text-a
 <script>
 'use strict';
 var TEMPLATE_URL = 'https://docs.google.com/spreadsheets/d/1i-lr4aewTmhj4eJ-hfXgjxaPzflmMyLMn-aqUepZjls/copy';   // 껍데기가 들어 있는 견본 시트 (사본 만들기)
-var APP = { version: '0.2.4', requiredShell: 1, s: '', ping: null, settings: null, relay: '', token: '', me: null };
+var APP = { version: '0.3.0', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
 
 /* ---------- 작은 도구 ---------- */
 function $(sel, root) { return (root || document).querySelector(sel); }
@@ -423,7 +423,8 @@ VIEWS.student = async function () {
     '<div class="card stack"><strong style="font-size:17px">내 기록</strong>' + (d.books.length ? d.books.map(function (b) {
       var p = b.status === 'approved' ? '<span class="pill ok">승인됨 +' + cm + 'cm</span>' : b.status === 'returned' ? '<span class="pill back">다시 써 오기</span>' : '<span class="pill wait">승인 대기</span>';
       return '<div><div class="row" style="justify-content:space-between;flex-wrap:nowrap"><span><strong>' + esc(b.title) + '</strong><br><span class="muted">' + esc([b.author, b.publisher].filter(Boolean).join(' · ')) + '</span></span>' + p + '</div>' +
-        (b.status === 'returned' ? '<p class="muted" style="margin:6px 0">' + esc(b.memo ? '선생님: ' + b.memo : '감상을 조금 더 써서 다시 보내 주세요.') + '</p><button class="btn line small" type="button" data-rw="' + esc(b.rid) + '">감상 고쳐 쓰기</button>' : '') + '</div>';
+        (b.status === 'returned' ? '<p class="muted" style="margin:6px 0">' + esc(b.memo ? '선생님: ' + b.memo : '감상을 조금 더 써서 다시 보내 주세요.') + '</p><button class="btn line small" type="button" data-rw="' + esc(b.rid) + '">감상 고쳐 쓰기</button> ' : '') +
+        (b.status !== 'approved' && APP.ping.shell >= 2 ? '<button class="textlink" type="button" data-dm="' + esc(b.rid) + '">지우기</button>' : '') + '</div>';
     }).join('') : '<span class="muted">아직 기록이 없어요.</span>') + '</div></div></div>';
   var picked = { classBookId: '', cover: '' };
   $('#out').onclick = function () { APP.me = null; render(); };
@@ -436,6 +437,13 @@ VIEWS.student = async function () {
     };
   });
   $('#t').addEventListener('input', function () { if (picked.classBookId) { picked.classBookId = ''; $('#cbnote').innerHTML = ''; } picked.cover = ''; });
+  app.querySelectorAll('[data-dm]').forEach(function (btn) {
+    btn.onclick = async function () {
+      if (!confirm('이 기록을 지울까요?')) return;
+      var ok = await guard(function () { return rpc('deleteMyBook', [me.id, me.pw, btn.dataset.dm]); });
+      if (ok) { toast('지웠어요.'); render(); }
+    };
+  });
   app.querySelectorAll('[data-rw]').forEach(function (btn) {
     btn.onclick = function () {
       var b = d.books.filter(function (x) { return x.rid === btn.dataset.rw; })[0];
@@ -473,7 +481,7 @@ async function enter(id, pw) {
 
 /* ---------- 선생님 메뉴 ---------- */
 var ADMIN = { tab: 'approve', data: null };
-var ADMIN_MENU = [['approve', '기록 승인'], ['class', '학급 도서'], ['students', '학생 관리'], ['register', '학생 등록'], ['rule', '감상 기준'], ['board', '현황판 · 주소'], ['pw', '비밀번호'], ['log', '업데이트 내역']];
+var ADMIN_MENU = [['approve', '기록 승인'], ['class', '학급 도서'], ['students', '학생 관리'], ['register', '학생 등록'], ['rule', '감상 기준'], ['board', '현황판 · 주소'], ['pw', '비밀번호 · 초기화'], ['log', '업데이트 내역']];
 function adminOut() { APP.token = ''; try { sessionStorage.removeItem('ru_token|' + APP.s); } catch (e) {} }
 VIEWS.admin = async function () {
   var app = $('#app');
@@ -492,7 +500,8 @@ VIEWS.admin = async function () {
   }
   var d = await guard(function () { return rpc('getAllDataAdmin', [APP.token]); });
   if (!d) { adminOut(); render(); return; }
-  ADMIN.data = d; ADMIN.at = Date.now(); APP.settings = d.settings;
+  ADMIN.data = d; ADMIN.at = Date.now(); APP.settings = d.settings; APP.ping.shell = d.shell;
+  $('#cls').textContent = classTitle(d.settings.className || d.sheetName || APP.ping.title);
   drawAdmin();
 };
 // 메뉴를 누를 때는 시트에 다시 묻지 않고, 받아 둔 자료로 바로 그림 (끊기지 않게)
@@ -504,7 +513,7 @@ function drawAdmin() {
   app.innerHTML = '<div class="row" style="justify-content:space-between"><button class="textlink" type="button" data-go="home">← 현황판으로</button><button class="textlink" type="button" id="lo">로그아웃</button></div>' +
     '<h1 style="font-size:26px;margin:6px 0 16px">선생님 메뉴</h1><div class="adm"><nav class="menu card" aria-label="선생님 메뉴">' +
     ADMIN_MENU.map(function (m) {
-      var badge = m[0] === 'approve' && pend.length ? '<span class="badge">' + pend.length + '</span>' : (m[0] === 'pw' && APP.pwDefault ? '<span class="badge">!</span>' : '');
+      var badge = m[0] === 'approve' && pend.length ? '<span class="badge">' + pend.length + '</span>' : ((m[0] === 'pw' && APP.pwDefault) || (m[0] === 'log' && d.shell < APP.latestShell) ? '<span class="badge">!</span>' : '');
       return '<button class="mi" type="button" data-tab="' + m[0] + '"' + (ADMIN.tab === m[0] ? ' aria-current="page"' : '') + '><i aria-hidden="true"></i><span>' + m[1] + '</span>' + badge + '</button>';
     }).join('') + '</nav><section class="card pane"><h2 class="ph"><i aria-hidden="true"></i>' + esc(ADMIN.tab === 'approve' ? '기록 승인 · 대기 ' + pend.length + '건' : label) + '</h2><div class="pb" id="pane"></div></section></div>';
   app.querySelectorAll('[data-tab]').forEach(function (b) {
@@ -607,18 +616,26 @@ var ADMIN_TABS = {
   },
   board: function (el, d) {
     var link = location.origin + location.pathname + '?s=' + encodeURIComponent(APP.s);
-    el.innerHTML = '<div class="stack" style="max-width:560px"><div class="item"><label class="row" style="min-height:44px;font-weight:700"><input type="checkbox" id="sn" style="width:22px;height:22px"' + (d.settings.showNames ? ' checked' : '') + '> 현황판에 친구 이름과 권수 보이기</label><p class="muted" style="margin:0">끄면 현황판에는 우리 반 전체 책탑만 보여요.</p></div>' +
+    el.innerHTML = '<div class="stack" style="max-width:560px">' + (d.shell >= 2 ? '<form class="item" id="cnf"><label class="f" for="cn" style="margin-top:0">화면에 보일 학급 이름 (비우면 시트 이름을 씁니다)</label><div class="row" style="flex-wrap:nowrap"><input class="in" id="cn" maxlength="30" autocomplete="off" value="' + esc(d.settings.className || '') + '" placeholder="' + esc(classTitle(d.sheetName)) + '"><button class="btn small" type="submit" style="white-space:nowrap">저장</button></div></form>' : '') + '<div class="item"><label class="row" style="min-height:44px;font-weight:700"><input type="checkbox" id="sn" style="width:22px;height:22px"' + (d.settings.showNames ? ' checked' : '') + '> 현황판에 친구 이름과 권수 보이기</label><p class="muted" style="margin:0">끄면 현황판에는 우리 반 전체 책탑만 보여요.</p></div>' +
       '<div class="item"><strong>학생에게 알려 줄 주소</strong><input class="in" id="lk" readonly value="' + esc(link) + '" style="margin-top:8px"><button class="btn line small" type="button" id="cp" style="margin-top:8px">주소 복사</button></div>' +
       '<div class="item"><strong>우리 반 시트</strong><p class="muted" style="margin:4px 0 8px">학생 명단과 기록은 이 시트에 저장됩니다.</p><a class="btn line small" href="' + esc(d.sheetUrl) + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;text-decoration:none">시트 열기</a></div></div>';
+    if ($('#cnf')) $('#cnf').onsubmit = function (ev) { ev.preventDefault(); act('setSettings', [{ className: $('#cn').value }], '학급 이름을 저장했어요.'); };
     $('#sn').onchange = function () { act('setSettings', [{ showNames: $('#sn').checked }], '저장했어요.'); };
     $('#cp').onclick = function () { var i = $('#lk'); i.select(); (navigator.clipboard ? navigator.clipboard.writeText(i.value) : Promise.reject()).then(function () { toast('주소를 복사했어요.'); }, function () { toast('주소를 길게 눌러 복사해 주세요.'); }); };
   },
   pw: function (el) {
-    el.innerHTML = '<form id="pf" style="max-width:420px">' + (APP.pwDefault ? '<p class="pill wait" style="margin:0 0 8px">아직 처음 비밀번호(1234)예요. 바꿔 주세요.</p>' : '') + '<label class="f" for="npw" style="margin-top:0">새 비밀번호 (4자 이상)</label><input class="in" id="npw" type="password" autocomplete="new-password"><button class="btn" type="submit" style="margin-top:12px">바꾸기</button></form>';
+    el.innerHTML = '<form id="pf" style="max-width:420px">' + (APP.pwDefault ? '<p class="pill wait" style="margin:0 0 8px">아직 처음 비밀번호(1234)예요. 바꿔 주세요.</p>' : '') + '<label class="f" for="npw" style="margin-top:0">새 비밀번호 (4자 이상)</label><input class="in" id="npw" type="password" autocomplete="new-password"><button class="btn" type="submit" style="margin-top:12px">바꾸기</button></form>' +
+      (ADMIN.data.shell >= 2 ? '<div class="item" style="max-width:520px;margin-top:22px"><strong>책 기록 모두 지우기</strong><p class="muted" style="margin:4px 0 10px">새 학년을 시작할 때 씁니다. 책 기록이 모두 지워지고 책탑이 0권이 됩니다. 학생 명단·학급 도서·설정은 그대로 남아요. 되돌릴 수 없으니 먼저 시트의 "파일 → 버전 기록"을 확인해 주세요.</p><button class="btn line small" type="button" id="rs">책 기록 모두 지우기</button></div>' : '');
+    if ($('#rs')) $('#rs').onclick = function () {
+      $('#modal').innerHTML = '<div class="shade"><form class="sheet" id="rsf"><h2>책 기록 모두 지우기</h2><p style="margin:0">정말 지우려면 아래 칸에 <b>지우기</b> 라고 적어 주세요.</p><label class="f" for="rsw">확인</label><input class="in" id="rsw" autocomplete="off"><button class="btn wide" type="submit">모두 지우기</button><button class="btn line wide" type="button" id="rsx">취소</button></form></div>';
+      $('#rsw').focus(); $('#rsx').onclick = function () { $('#modal').innerHTML = ''; };
+      $('#rsf').onsubmit = function (ev) { ev.preventDefault(); if ($('#rsw').value.trim() !== '지우기') { toast('"지우기" 라고 적어 주세요.'); return; } act('resetBooks', [], '책 기록을 모두 지웠어요.'); };
+    };
     $('#pf').onsubmit = async function (ev) { ev.preventDefault(); var r2 = await guard(function () { return rpc('changeAdminPassword', [APP.token, $('#npw').value]); }); if (!r2) return; if (!r2.ok) { toast(r2.message); return; } APP.pwDefault = false; toast('비밀번호를 바꿨어요.'); render(); };
   },
   log: async function (el, d) {
-    el.innerHTML = '<p class="muted" style="margin-top:0">화면 ' + APP.version + ' · 껍데기 ' + d.shell + '판</p><div id="logl" class="stack"><span class="muted">불러오는 중이에요.</span></div>';
+    el.innerHTML = '<p class="muted" style="margin-top:0">화면 ' + APP.version + ' · 껍데기 ' + d.shell + '판</p>' +
+      (d.shell < APP.latestShell ? '<div class="item" id="shup" style="background:var(--butter);margin-bottom:14px"><strong>껍데기 새 판(' + APP.latestShell + '판)이 나왔어요</strong><p style="margin:6px 0">지금 껍데기(' + d.shell + '판)로도 쓸 수 있지만, 학급 이름 정하기·대기 기록 지우기·책 기록 초기화는 새 판에서 됩니다.</p><ol style="margin:0;padding-left:20px"><li><a href="https://github.com/MusicalPE/readus/blob/main/Shell.gs" target="_blank" rel="noopener">새 Shell.gs</a> 내용을 통째로 복사합니다.</li><li><a href="' + esc(d.sheetUrl) + '" target="_blank" rel="noopener">우리 반 시트</a> → 확장 프로그램 → Apps Script 에서 내용을 모두 지우고 붙여 넣은 뒤 저장합니다.</li><li>배포 → <b>배포 관리</b> → 연필(수정) → 버전: <b>새 버전</b> → 배포. (새 배포를 만들면 주소가 바뀌니 꼭 배포 관리에서)</li></ol></div>' : '') + '<div id="logl" class="stack"><span class="muted">불러오는 중이에요.</span></div>';
     try {
       var list = await (await fetch('changelog.json', { cache: 'no-cache' })).json();
       if (!$('#logl')) return;

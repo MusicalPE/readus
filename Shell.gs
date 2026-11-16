@@ -10,14 +10,14 @@
  * 배포 설정: 다음 사용자로 실행 = 나, 액세스 권한 = 모든 사용자
  * Made by 음악적체육인
  *************************************************************/
-const SHELL_VERSION = 1;                       // 껍데기 판 (화면이 확인함)
+const SHELL_VERSION = 2;                       // 껍데기 판 (화면이 확인함)  2: 학급 이름, 자유 저장칸(extra·선생님만 보는 칸), 내 대기 기록 지우기, 기록 고치기, 책 기록 초기화, 쪽수·덧붙임 칸, 날짜별 권수, 전국판 보고 준비
 const APP_URL = 'https://musicalpe.github.io/readus/';
 
 const SHEET_STUDENTS = 'Students';
 const SHEET_BOOKS = 'Books';
 const SHEET_CLASSBOOKS = 'ClassBooks';
 const STUDENTS_HEADER_ = ['ID', 'Grade', 'Class', 'Number', 'Name', 'PasswordHash', 'SortOrder'];
-const BOOKS_HEADER_ = ['RecordID', 'Timestamp', 'StudentID', 'Date', 'Title', 'Author', 'Publisher', 'Note', 'Status', 'ClassBookID', 'Cover', 'Memo'];
+const BOOKS_HEADER_ = ['RecordID', 'Timestamp', 'StudentID', 'Date', 'Title', 'Author', 'Publisher', 'Note', 'Status', 'ClassBookID', 'Cover', 'Memo', 'Pages', 'Extra'];   // Pages·Extra(2판): 쪽수와 덧붙임(JSON) — 새 기능이 껍데기를 안 바꾸고 쓰도록 미리 둔 칸
 const CLASSBOOKS_HEADER_ = ['ID', 'Title', 'Author', 'Publisher', 'Due', 'Cover', 'CreatedAt'];
 const TOKEN_TTL_SEC = 24 * 60 * 60;            // 선생님 로그인 유지: 하루
 const DEFAULT_ADMIN_PASSWORD = '1234';         // 처음 비밀번호 (선생님 화면에서 바로 바꾸세요)
@@ -49,7 +49,8 @@ const RPC_ALLOW_ = [
   'getStudentsPublic', 'addStudentsBulk', 'updateStudent', 'deleteStudent',
   'getMyBooks', 'addBook', 'rewriteBook', 'getBoard',
   'getAllDataAdmin', 'approveBooks', 'returnBook', 'deleteBook',
-  'addClassBook', 'removeClassBook'
+  'addClassBook', 'removeClassBook',
+  'deleteMyBook', 'updateBookAdmin', 'resetBooks', 'getPrivateAdmin', 'setPrivate', 'natReport'
 ];
 function doPost(e) {
   let out;
@@ -69,7 +70,7 @@ function doPost(e) {
 }
 
 function ping() {
-  return { shell: SHELL_VERSION, appUrl: APP_URL, self: ScriptApp.getService().getUrl(), title: getSS_().getName(), bookCm: BOOK_CM };
+  return { shell: SHELL_VERSION, appUrl: APP_URL, self: ScriptApp.getService().getUrl(), title: title_(), bookCm: BOOK_CM };
 }
 
 /************ 유틸 ************/
@@ -87,6 +88,10 @@ function sheet_(name, header) {
     sh = ss.insertSheet(name);
     sh.getRange(1, 1, sh.getMaxRows(), header.length).setNumberFormat('@');
     sh.appendRow(header);
+  } else if (sh.getLastColumn() < header.length) {      // 옛 판에서 만든 시트: 새로 생긴 칸의 머리줄을 덧붙임
+    const from = sh.getLastColumn() + 1;
+    sh.getRange(1, from, sh.getMaxRows(), header.length - from + 1).setNumberFormat('@');
+    sh.getRange(1, from, 1, header.length - from + 1).setValues([header.slice(from - 1)]);
   }
   return sh;
 }
@@ -151,7 +156,9 @@ function admin_(token) { if (!checkAdminToken_(token)) throw new Error('권한�
 const DEFAULT_SETTINGS_ = {
   rule: { on: true, kind: 'sentence', min: 3,
     questions: ['가장 기억에 남는 장면은 무엇인가요?', '주인공에게 해 주고 싶은 말이 있나요?', '내 생활과 닮은 점이 있었나요?'] },
-  showNames: true          // 현황판에 친구 이름과 권수를 보일지
+  showNames: true,         // 현황판에 친구 이름과 권수를 보일지
+  className: '',           // 화면에 보일 학급 이름 (비우면 시트 이름)
+  extra: {}                // 자유 저장칸: 화면의 새 기능이 껍데기를 바꾸지 않고 설정을 두는 곳 (누구나 읽음)
 };
 function getSettings() {
   let saved = {};
@@ -164,8 +171,17 @@ function getSettings() {
       min: Math.max(1, Math.min(2000, parseInt(r.min, 10) || d.min)),
       questions: Array.isArray(r.questions) ? r.questions.map(function (q) { return str_(q).slice(0, 60); }).filter(String).slice(0, 5) : d.questions
     },
-    showNames: saved.showNames === undefined ? DEFAULT_SETTINGS_.showNames : !!saved.showNames
+    showNames: saved.showNames === undefined ? DEFAULT_SETTINGS_.showNames : !!saved.showNames,
+    className: str_(saved.className).slice(0, 30),
+    extra: (saved.extra && typeof saved.extra === 'object' && !Array.isArray(saved.extra)) ? saved.extra : {}
   };
+}
+// 화면에 보일 학급 이름: 선생님이 정한 이름, 없으면 시트 이름
+function title_() { return getSettings().className || getSS_().getName(); }
+function merge_(cur, patch, maxLen) {
+  Object.keys(patch || {}).forEach(function (k) { if (patch[k] === null) delete cur[k]; else cur[k] = patch[k]; });
+  if (JSON.stringify(cur).length > maxLen) throw new Error('설정이 너무 큽니다.');
+  return cur;
 }
 function setSettings(token, patch) {
   admin_(token);
@@ -173,6 +189,8 @@ function setSettings(token, patch) {
   patch = patch || {};
   if (patch.rule) Object.keys(patch.rule).forEach(function (k) { cur.rule[k] = patch.rule[k]; });
   if (patch.showNames !== undefined) cur.showNames = !!patch.showNames;
+  if (patch.className !== undefined) cur.className = clean_(patch.className, 30).trim();
+  if (patch.extra && typeof patch.extra === 'object') cur.extra = merge_(cur.extra, patch.extra, 8000);
   PropertiesService.getScriptProperties().setProperty('SETTINGS', JSON.stringify(cur));
   return getSettings();
 }
@@ -248,7 +266,7 @@ function student_(id, pw) {
 function books_() {
   return rows_(sheet_(SHEET_BOOKS, BOOKS_HEADER_)).map(function (r) {
     return { rid: str_(r[0]), ts: str_(r[1]), sid: str_(r[2]), date: str_(r[3]), title: str_(r[4]), author: str_(r[5]), publisher: str_(r[6]),
-      note: str_(r[7]), status: str_(r[8]) || 'pending', classBookId: str_(r[9]), cover: str_(r[10]), memo: str_(r[11]) };
+      note: str_(r[7]), status: str_(r[8]) || 'pending', classBookId: str_(r[9]), cover: str_(r[10]), memo: str_(r[11]), pages: Number(str_(r[12])) || 0, extra: str_(r[13]) };
   }).filter(function (b) { return b.rid; });
 }
 function classBooks_() {
@@ -256,6 +274,8 @@ function classBooks_() {
     return { id: str_(r[0]), title: str_(r[1]), author: str_(r[2]), publisher: str_(r[3]), due: str_(r[4]), cover: str_(r[5]) };
   }).filter(function (c) { return c.id; });
 }
+function pages_(v) { const n = Math.floor(Number(v)); return (n > 0 && n < 100000) ? String(n) : ''; }
+function extra_(v) { if (!v || typeof v !== 'object') return ''; let t = ''; try { t = JSON.stringify(v); } catch (e) { t = ''; } return (t.length <= 1000 && t !== '{}') ? t : ''; }
 function cover_(u) { u = String(u || '').trim(); return /^https:\/\/[^\s"'<>]{1,400}$/.test(u) ? u : ''; }   // 표지는 https 그림 주소만
 
 // 학생 화면: 내 기록 + 학급 도서(내가 읽었는지)
@@ -288,7 +308,7 @@ function addBook(id, pw, o) {
     if (o.classBookId) { cbid = classBooks_().some(function (c) { return c.id === String(o.classBookId); }) ? String(o.classBookId) : ''; }
     const rid = Utilities.getUuid().slice(0, 12);
     sheet_(SHEET_BOOKS, BOOKS_HEADER_).appendRow([rid, Utilities.formatDate(new Date(), tz_(), 'yyyy-MM-dd HH:mm'), s.id, today_(), title,
-      clean_(o.author, 60), clean_(o.publisher, 60), clean_(o.note, 2000), 'pending', cbid, cover_(o.cover), '']);
+      clean_(o.author, 60), clean_(o.publisher, 60), clean_(o.note, 2000), 'pending', cbid, cover_(o.cover), '', pages_(o.pages), extra_(o.extra)]);
     return { ok: true, rid: rid };
   });
 }
@@ -303,6 +323,16 @@ function rewriteBook(id, pw, rid, note) {
     if (str_(r[8]) === 'approved') throw new Error('이미 승인된 기록입니다.');
     sh.getRange(row, 8).setValue(clean_(note, 2000));
     sh.getRange(row, 9).setValue('pending');
+    return { ok: true };
+  });
+}
+
+// 학생이 아직 승인받지 않은 자기 기록을 지움 (잘못 올렸을 때)
+function deleteMyBook(id, pw, rid) {
+  const s = student_(id, pw);
+  return withLock_(function () {
+    const n = deleteRowsWhere_(sheet_(SHEET_BOOKS, BOOKS_HEADER_), function (r) { return str_(r[0]) === String(rid) && str_(r[2]) === s.id && str_(r[8]) !== 'approved'; });
+    if (!n) throw new Error('지울 수 없는 기록입니다. (이미 승인되었거나 없는 기록)');
     return { ok: true };
   });
 }
@@ -322,8 +352,10 @@ function getBoard() {
   const byId = {};
   st.forEach(function (s) { byId[s.id] = s; });
   const valid = ok.filter(function (b) { return byId[b.sid]; });
+  const days = {};
+  valid.forEach(function (b) { if (isDate_(b.date)) days[b.date] = (days[b.date] || 0) + 1; });
   return {
-    title: getSS_().getName(), bookCm: BOOK_CM, total: valid.length, students: st.length,
+    title: title_(), bookCm: BOOK_CM, total: valid.length, students: st.length, days: days,
     showNames: set.showNames,
     ranks: set.showNames ? st.map(function (s) { return { name: s.name, count: cnt[s.id] || 0 }; }).sort(function (a, b) { return b.count - a.count; }) : null,
     recent: valid.slice(-40).reverse().map(function (b) { return { title: b.title, name: set.showNames ? byId[b.sid].name : '' }; }),
@@ -334,7 +366,7 @@ function getBoard() {
 /************ 선생님 화면 ************/
 function getAllDataAdmin(token) {
   admin_(token);
-  return { students: students_().map(pub_), books: books_(), classBooks: classBooks_(), settings: getSettings(), sheetUrl: getSS_().getUrl(), shell: SHELL_VERSION };
+  return { students: students_().map(pub_), books: books_(), classBooks: classBooks_(), settings: getSettings(), sheetUrl: getSS_().getUrl(), sheetName: getSS_().getName(), shell: SHELL_VERSION };
 }
 function setStatus_(rids, status, memo) {
   return withLock_(function () {
@@ -358,6 +390,31 @@ function deleteBook(token, rid) {
     return { ok: true, deleted: deleteRowsWhere_(sheet_(SHEET_BOOKS, BOOKS_HEADER_), function (r) { return str_(r[0]) === String(rid); }) };
   });
 }
+// 선생님이 기록을 고침 (제목 오타 등). 넘겨준 항목만 바뀜
+function updateBookAdmin(token, rid, o) {
+  admin_(token);
+  o = o || {};
+  return withLock_(function () {
+    const sh = sheet_(SHEET_BOOKS, BOOKS_HEADER_), row = findRow_(sh, rid);
+    if (!row) throw new Error('기록을 찾을 수 없습니다.');
+    if (o.title !== undefined && clean_(o.title, 100)) sh.getRange(row, 5).setValue(clean_(o.title, 100));
+    if (o.author !== undefined) sh.getRange(row, 6).setValue(clean_(o.author, 60));
+    if (o.publisher !== undefined) sh.getRange(row, 7).setValue(clean_(o.publisher, 60));
+    if (o.note !== undefined) sh.getRange(row, 8).setValue(clean_(o.note, 2000));
+    if (o.date !== undefined && isDate_(o.date)) sh.getRange(row, 4).setValue(String(o.date));
+    if (o.cover !== undefined) sh.getRange(row, 11).setValue(cover_(o.cover));
+    if (o.pages !== undefined) sh.getRange(row, 13).setValue(pages_(o.pages));
+    if (o.extra !== undefined) sh.getRange(row, 14).setValue(extra_(o.extra));
+    return { ok: true };
+  });
+}
+// 책 기록 모두 지우기 (새 학년 시작). 학생 명단·학급 도서·설정은 그대로
+function resetBooks(token) {
+  admin_(token);
+  return withLock_(function () {
+    return { ok: true, deleted: deleteRowsWhere_(sheet_(SHEET_BOOKS, BOOKS_HEADER_), function () { return true; }) };
+  });
+}
 function addClassBook(token, o) {
   admin_(token);
   o = o || {};
@@ -376,4 +433,40 @@ function removeClassBook(token, id) {
   return withLock_(function () {
     return { ok: true, deleted: deleteRowsWhere_(sheet_(SHEET_CLASSBOOKS, CLASSBOOKS_HEADER_), function (r) { return str_(r[0]) === String(id); }) };
   });
+}
+
+/************ 선생님만 보는 저장칸 (열쇠처럼 화면에 드러나면 안 되는 설정) ************/
+function private_() {
+  try { const o = JSON.parse(PropertiesService.getScriptProperties().getProperty('PRIVATE') || '{}'); return (o && typeof o === 'object') ? o : {}; } catch (e) { return {}; }
+}
+function getPrivateAdmin(token) { admin_(token); return private_(); }
+function setPrivate(token, patch) {
+  admin_(token);
+  const cur = merge_(private_(), (patch && typeof patch === 'object') ? patch : {}, 8000);
+  PropertiesService.getScriptProperties().setProperty('PRIVATE', JSON.stringify(cur));
+  return cur;
+}
+
+/************ 전국판 보고 (준비) ************
+ * 아직 전국판(Read Up!)은 없습니다. 나중에 껍데기를 바꾸지 않고 참여할 수 있도록 길만 만들어 둡니다.
+ * 선생님만 보는 저장칸의 nat = { on, key, collector, name, showName } 이 채워져 있을 때만 보냅니다.
+ * 보내는 내용은 이 껍데기가 정합니다: 가린 이름·권수 같은 요약뿐이고 감상 글은 보내지 않습니다.
+ * 참여 열쇠(key)는 화면에 내보내지 않습니다.
+ */
+function natMask_(n) { n = String(n || ''); return n ? n.charAt(0) + n.slice(1).replace(/./g, '○') : ''; }
+function natReport() {
+  const nat = private_().nat || {};
+  if (!nat.on || !nat.key || !/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec$/.test(String(nat.collector || ''))) return { ok: false, off: true };
+  const cache = CacheService.getScriptCache();
+  if (cache.get('NAT_SENT')) return { ok: true, skipped: true };       // 10분에 한 번만
+  cache.put('NAT_SENT', '1', 600);
+  const b = getBoard(), st = students_(), cnt = {};
+  books_().forEach(function (x) { if (x.status === 'approved') cnt[x.sid] = (cnt[x.sid] || 0) + 1; });
+  const payload = {
+    v: 1, shell: SHELL_VERSION, key: String(nat.key), name: str_(nat.name).slice(0, 30), showName: !!nat.showName,
+    registered: st.length, total: b.total, bookCm: BOOK_CM, days: b.days,
+    students: st.map(function (s) { return { k: hashPw_('ru-student|' + nat.key + '|' + s.id).slice(0, 10), n: natMask_(s.name), g: s.grade, c: cnt[s.id] || 0 }; })
+  };
+  const res = UrlFetchApp.fetch(String(nat.collector), { method: 'post', contentType: 'text/plain;charset=utf-8', payload: JSON.stringify({ fn: 'report', args: [payload] }), muteHttpExceptions: true });
+  return { ok: res.getResponseCode() === 200 };
 }

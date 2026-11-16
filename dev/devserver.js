@@ -5,7 +5,7 @@ const express = require('express');
 const path = require('path');
 const { createGas } = require('./gas-emu');
 const PORT = +process.env.PORT || 8891;
-const gas = createGas({ selfUrl: 'http://localhost:' + PORT + '/exec', shellPath: path.join(__dirname, '..', 'Shell.gs') });
+const gas = createGas({ selfUrl: 'http://localhost:' + PORT + '/exec', shellPath: process.env.SHELL_PATH ? path.resolve(__dirname, process.env.SHELL_PATH) : path.join(__dirname, '..', 'Shell.gs') });   // SHELL_PATH=옛 껍데기 파일 로 옛 판 학교 흉내
 const relay = createGas({ selfUrl: 'http://localhost:' + PORT + '/relay', shellPath: path.join(__dirname, '..', 'Relay.gs') });
 relay.props.KAKAO_KEY = 'test-key';
 if (process.env.SEED) {

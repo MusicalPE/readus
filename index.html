@@ -182,7 +182,7 @@ table.t td,table.t th{padding:8px 6px;border-bottom:1px solid var(--line);text-a
 var TEMPLATE_URL = 'https://docs.google.com/spreadsheets/d/1i-lr4aewTmhj4eJ-hfXgjxaPzflmMyLMn-aqUepZjls/copy';   // 껍데기가 들어 있는 견본 시트 (사본 만들기)
 // 주소에 ?demo 가 붙으면 설치 없이 둘러보는 미리보기 — 지어낸 학급을 이 브라우저 안에서만 돌림 (demo.js)
 var DEMO = new URLSearchParams(location.search).has('demo');
-var APP = { version: '0.10.0', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
+var APP = { version: '1.0.0', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
 
 /* ---------- 작은 도구 ---------- */
 function $(sel, root) { return (root || document).querySelector(sel); }

@@ -175,11 +175,14 @@ table.t td,table.t th{padding:8px 6px;border-bottom:1px solid var(--line);text-a
 </div>
 <div id="modal"></div>
 <script src="lib/qrcode.js"></script>
+<script src="demo.js"></script>
 <div id="toast" role="status"></div>
 <script>
 'use strict';
 var TEMPLATE_URL = 'https://docs.google.com/spreadsheets/d/1i-lr4aewTmhj4eJ-hfXgjxaPzflmMyLMn-aqUepZjls/copy';   // 껍데기가 들어 있는 견본 시트 (사본 만들기)
-var APP = { version: '0.9.1', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
+// 주소에 ?demo 가 붙으면 설치 없이 둘러보는 미리보기 — 지어낸 학급을 이 브라우저 안에서만 돌림 (demo.js)
+var DEMO = new URLSearchParams(location.search).has('demo');
+var APP = { version: '0.10.0', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
 
 /* ---------- 작은 도구 ---------- */
 function $(sel, root) { return (root || document).querySelector(sel); }
@@ -208,6 +211,7 @@ function heightText(count) { return hText(count * BOOK_CM); }
 
 /* ---------- 학교 시트(껍데기)와 주고받기 ---------- */
 async function rpcOnce(fn, args) {
+  if (DEMO) return READUS_DEMO.call(fn, args);
   var res = await fetch(APP.s, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ fn: fn, args: args || [] }) });
   if (!res.ok) { var e = new Error('학교 시트와 연결이 잠시 끊겼어요. (' + res.status + ')'); e.retry = true; throw e; }
   var out = await res.json();
@@ -246,7 +250,7 @@ $('#home').addEventListener('click', function () { go('home'); });
 window.addEventListener('hashchange', render);
 
 /* ---------- 접속 QR (학생 휴대폰으로 찍어 바로 들어오기) ---------- */
-function studentLink() { return location.origin + location.pathname + '?s=' + encodeURIComponent(APP.s) + '#student'; }
+function studentLink() { return location.origin + location.pathname + (DEMO ? '?demo' : '?s=' + encodeURIComponent(APP.s)) + '#student'; }
 function qrSvg(text) {
   if (typeof qrcode !== 'function') return '';
   var q = qrcode(0, 'M'); q.addData(text); q.make();
@@ -447,6 +451,7 @@ VIEWS.home = async function () {
 /* ---------- 목표에 닿았을 때 축하 (기기마다 한 번) ---------- */
 function celebrate(d, cm, goals) {
   var reached = goals.filter(function (g) { return cm >= g.cm; }).length, key = 'ru_goal2|' + APP.s, prev = null;
+  if (DEMO) return;   // 미리보기는 기기에 아무것도 남기지 않음
   try { prev = localStorage.getItem(key); localStorage.setItem(key, String(reached)); } catch (e) { return; }
   if (prev === null || reached <= Number(prev) || !reached) return;
   var g = goals[reached - 1], next = goals[reached], conf = '';
@@ -463,6 +468,7 @@ function celebrate(d, cm, goals) {
 
 /* ---------- 책 검색 (중계기) ---------- */
 async function searchBooks(q) {
+  if (DEMO) return READUS_DEMO.search(q);
   var res = await fetch(APP.relay + (APP.relay.indexOf('?') < 0 ? '?' : '&') + 'q=' + encodeURIComponent(q));
   var out = await res.json();
   if (!out.ok) throw new Error(out.error || '책 검색이 안 돼요.');
@@ -794,7 +800,7 @@ var ADMIN_TABS = {
     $('#rf').onsubmit = function (ev) { ev.preventDefault(); act('setSettings', [{ rule: { on: $('#ron').checked, kind: $('#rk').value, min: Number($('#rm').value) || 1, questions: $('#rq').value.split(/\n/).map(function (s) { return s.trim(); }).filter(Boolean).slice(0, 5) } }], '저장했어요.'); };
   },
   board: function (el, d) {
-    var link = location.origin + location.pathname + '?s=' + encodeURIComponent(APP.s);
+    var link = location.origin + location.pathname + (DEMO ? '?demo' : '?s=' + encodeURIComponent(APP.s));
     el.innerHTML = '<div class="stack" style="max-width:560px">' + (d.shell >= 2 ? '<form class="item" id="cnf"><label class="f" for="cn" style="margin-top:0">화면에 보일 학급 이름 (비우면 시트 이름을 씁니다)</label><div class="row" style="flex-wrap:nowrap"><input class="in" id="cn" maxlength="30" autocomplete="off" value="' + esc(d.settings.className || '') + '" placeholder="' + esc(classTitle(d.sheetName)) + '"><button class="btn small" type="submit" style="white-space:nowrap">저장</button></div></form>' : '') + (d.shell >= 2 ? '<div class="item"><label class="f" for="gr" style="margin-top:0">우리 반 학년 (현황판의 "내 키" 목표에 쓰여요)</label><select class="in" id="gr">' + Object.keys(GRADE_NAME).map(function (k) { return '<option value="' + k + '"' + (classGrade() === k ? ' selected' : '') + '>' + GRADE_NAME[k] + ' · 평균 ' + KID_CM[k] + 'cm</option>'; }).join('') + (classGrade() ? '' : '<option value="" selected>고르지 않음 (140cm로 셈)</option>') + '</select><p class="muted" style="margin:8px 0 0">여러 학년이 함께 쓰면 가운데 학년을 고르세요.</p></div>' : '') + '<div class="item"><label class="row" style="min-height:44px;font-weight:700"><input type="checkbox" id="sn" style="width:22px;height:22px"' + (d.settings.showNames ? ' checked' : '') + '> 현황판에 친구 이름과 권수 보이기</label><p class="muted" style="margin:0">끄면 현황판에는 우리 반 전체 책탑만 보여요.</p></div>' +
       '<div class="item"><strong>학생에게 알려 줄 주소</strong><input class="in" id="lk" readonly value="' + esc(link) + '" style="margin-top:8px"><div class="row" style="margin-top:8px"><button class="btn line small" type="button" id="cp">주소 복사</button><button class="btn small" type="button" id="bq">접속 QR 크게 보기</button></div><p class="muted" style="margin:8px 0 0">현황판 오른쪽 위의 "접속 QR" 단추로도 언제든 띄울 수 있어요.</p></div>' +
       '<div class="item"><strong>우리 반 시트</strong><p class="muted" style="margin:4px 0 8px">학생 명단과 기록은 이 시트에 저장됩니다.</p><a class="btn line small" href="' + esc(d.sheetUrl) + '" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;text-decoration:none">시트 열기</a></div></div>';
@@ -837,9 +843,18 @@ function connectScreen(msg) {
     location.search = '?s=' + encodeURIComponent(u);
   };
 }
+// 미리보기 안내 띠
+function demoBar() {
+  var b = document.createElement('div');
+  b.id = 'demobar';
+  b.textContent = '미리보기 · 지어낸 학급이에요. 눌러 본 내용은 저장되지 않고, 새로 고치면 처음으로 돌아가요. 선생님 비밀번호는 아무거나 넣어도 들어가져요.';
+  b.style.cssText = 'background:#3E2C20;color:#FFF6E4;font-size:13px;line-height:1.5;text-align:center;padding:7px 12px';
+  document.body.insertBefore(b, document.body.firstChild);
+}
 async function start() {
   $('#ver').textContent = APP.version;
   var q = new URLSearchParams(location.search), s = q.get('s') || '';
+  if (DEMO) s = 'demo';
   try { if (!s) s = localStorage.getItem('ru_shell') || ''; } catch (e) {}
   if (!s) { connectScreen(); return; }
   APP.s = s;
@@ -847,12 +862,13 @@ async function start() {
     var got = await Promise.all([rpc('ping'), rpc('getSettings')]);
     APP.ping = got[0]; APP.settings = got[1];
   } catch (e) { connectScreen('학교 시트와 연결하지 못했어요. 주소를 다시 확인해 주세요. (' + (e.message || e) + ')'); return; }
-  try { localStorage.setItem('ru_shell', s); APP.token = sessionStorage.getItem('ru_token|' + s) || ''; } catch (e) {}
+  if (!DEMO) { try { localStorage.setItem('ru_shell', s); APP.token = sessionStorage.getItem('ru_token|' + s) || ''; } catch (e) {} }
   // 주소에 학교 시트가 빠져 있으면 채워 둠 — 홈 화면에 추가하거나 주소를 복사해도 우리 반으로 열리게
-  if (!q.get('s')) { try { history.replaceState(null, '', location.pathname + '?s=' + encodeURIComponent(s) + location.hash); } catch (e) {} }
+  if (!q.get('s') && !DEMO) { try { history.replaceState(null, '', location.pathname + '?s=' + encodeURIComponent(s) + location.hash); } catch (e) {} }
   $('#cls').textContent = classTitle(APP.ping.title);
   if (APP.ping.shell < APP.requiredShell) toast('껍데기를 새 판으로 바꿔야 해요. 선생님께 알려 주세요.');
-  try { var rj = await (await fetch('relay.json', { cache: 'no-cache' })).json(); if (/^https?:\/\//.test(rj.relay || '')) APP.relay = rj.relay; } catch (e) {}
+  if (DEMO) { APP.relay = 'demo'; demoBar(); }
+  else { try { var rj = await (await fetch('relay.json', { cache: 'no-cache' })).json(); if (/^https?:\/\//.test(rj.relay || '')) APP.relay = rj.relay; } catch (e) {} }
   render();
 }
 /* ---------- 앱으로 설치 ---------- */

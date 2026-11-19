@@ -162,7 +162,7 @@ try:
 
         # 10-0. 사용 안내 (어느 화면에서나)
         pg.locator('[data-help]').first.click(); pg.wait_for_selector('.sheet.help')
-        ok('사용 안내 창 (항목 9개)', pg.locator('.sheet.help section').count() == 9 and '리더스 간략 사용법' in pg.inner_text('.sheet.help'))
+        ok('사용 안내 창 (항목 8개)', pg.locator('.sheet.help section').count() == 8 and '리더스 간략 사용법' in pg.inner_text('.sheet.help'))
         pg.keyboard.press('Escape'); ok('사용 안내 닫기 (Esc)', pg.locator('.sheet.help').count() == 0)
         # 10-1. 내 독서기록장 (점퍼스처럼 현황판에서 이름을 누르면 비밀번호를 묻고 본인 기록만)
         pg.click('[data-go=mine]'); pg.wait_for_selector('#logs .log')

@@ -5,7 +5,7 @@
 
 - 화면 주소: https://musicalpe.github.io/readus/
 - 미리보기(설치 없이 둘러보기): https://musicalpe.github.io/readus/?demo — 지어낸 학급이 채워져 있고, 눌러 본 내용은 저장되지 않습니다.
-- 지금 판: 화면 1.0.0 · 껍데기 2판
+- 지금 판: 화면 1.1.0 · 껍데기 2판
 
 ## 할 수 있는 것
 

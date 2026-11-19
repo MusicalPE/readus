@@ -78,7 +78,16 @@ img.cover{object-fit:cover;padding:0;border-left:0;display:block}
 .marks .goal strong{color:var(--mustard);font-size:15px}
 .marks .now strong{color:var(--card);font-size:17px}
 .side{flex:2 1 340px;display:flex;flex-direction:column;gap:14px;min-width:0}
-.rank{display:grid;grid-template-columns:72px 1fr 44px;gap:10px;align-items:center}
+.rank{display:grid;grid-template-columns:72px 1fr 44px;gap:10px;align-items:center;width:100%;border:0;background:none;padding:4px 6px;margin:0 -6px;border-radius:10px;font:inherit;color:inherit;text-align:left;cursor:pointer;transition:background .15s}
+.rank:hover{background:var(--butter)}.rank:active{transform:scale(.99)}
+.rank span{text-decoration:underline;text-decoration-color:var(--line);text-underline-offset:3px}
+.log{border-top:1px solid var(--line);padding-top:14px;display:grid;grid-template-columns:64px 1fr;gap:14px}
+.log:first-of-type{border-top:0;padding-top:0}
+.log .cover{width:64px;height:92px}
+.log .note{white-space:pre-wrap;line-height:1.7;margin:8px 0 0;background:var(--paper);border-radius:12px;padding:10px 12px}
+.log .memo{margin:6px 0 0;font-size:14px;color:var(--sub)}
+.mrow{display:grid;grid-template-columns:44px 1fr 44px;gap:10px;align-items:center}.mrow .bar{height:16px}
+@media (max-width:560px){.log{grid-template-columns:48px 1fr;gap:10px}.log .cover{width:48px;height:70px}}
 .rank .bar{height:18px}
 .headline{font-size:30px}
 /* 학생 이름 고르기 */
@@ -182,7 +191,7 @@ table.t td,table.t th{padding:8px 6px;border-bottom:1px solid var(--line);text-a
 var TEMPLATE_URL = 'https://docs.google.com/spreadsheets/d/1i-lr4aewTmhj4eJ-hfXgjxaPzflmMyLMn-aqUepZjls/copy';   // 껍데기가 들어 있는 견본 시트 (사본 만들기)
 // 주소에 ?demo 가 붙으면 설치 없이 둘러보는 미리보기 — 지어낸 학급을 이 브라우저 안에서만 돌림 (demo.js)
 var DEMO = new URLSearchParams(location.search).has('demo');
-var APP = { version: '1.0.0', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
+var APP = { version: '1.1.0', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
 
 /* ---------- 작은 도구 ---------- */
 function $(sel, root) { return (root || document).querySelector(sel); }
@@ -234,6 +243,7 @@ function go(view) { if (location.hash !== '#' + view) location.hash = view; else
 function render() {
   var v = (location.hash || '#home').slice(1);
   if (!VIEWS[v]) v = 'home';
+  if (v === 'home') APP.after = '';
   $('#modal').innerHTML = '';
   var nav = $('#nav');
   nav.innerHTML = v === 'home'
@@ -438,14 +448,15 @@ VIEWS.home = async function () {
   if (d.ranks) {
     var max = Math.max.apply(null, d.ranks.map(function (r) { return r.count; }).concat([1]));
     side += '<div class="card stack"><strong style="font-size:17px">친구들이 쌓은 책</strong>' + (d.ranks.length ? d.ranks.slice(0, 10).map(function (r, i) {
-      return '<div class="rank"><span>' + esc(r.name) + '</span><div class="bar" aria-hidden="true"><i style="width:' + Math.round(r.count / max * 100) + '%;background:' + BOOKC[i % 6] + '"></i></div><b>' + r.count + '권</b></div>';
-    }).join('') + (d.ranks.length > 10 ? '<span class="muted">그 외 ' + (d.ranks.length - 10) + '명</span>' : '') : '<span class="muted">아직 등록된 학생이 없어요.</span>') + '<span class="muted">선생님이 승인한 책만 쌓여요</span></div>';
+      return '<button class="rank" type="button" data-rk="' + esc(r.name) + '" aria-label="' + esc(r.name) + '의 독서기록장 보기"><span>' + esc(r.name) + '</span><div class="bar" aria-hidden="true"><i style="width:' + Math.round(r.count / max * 100) + '%;background:' + BOOKC[i % 6] + '"></i></div><b>' + r.count + '권</b></button>';
+    }).join('') + (d.ranks.length > 10 ? '<span class="muted">그 외 ' + (d.ranks.length - 10) + '명</span>' : '') : '<span class="muted">아직 등록된 학생이 없어요.</span>') + '<span class="muted">선생님이 승인한 책만 쌓여요 · 이름을 누르면 내 독서기록장</span></div>';
   }
   if (d.recent.length) side += '<div class="card"><span class="muted">방금 쌓인 책</span><br><strong>' + esc(d.recent[0].title) + (d.recent[0].name ? ' · ' + esc(d.recent[0].name) : '') + '</strong></div>';
   if (!side) side = '<div class="card"><strong>아직 쌓인 책이 없어요</strong><p class="muted">책을 읽고 "책 기록하기"로 첫 책을 올려 보세요.</p></div>';
   app.innerHTML = '<div class="row" style="justify-content:space-between;margin-bottom:4px"><h1 class="headline">우리 반 책탑 ' + d.total + '권 · ' + hText(cm) + '</h1>' +
     '<strong>' + (left > 0 ? esc(goal.name) + '까지 ' + left + '권 남았어요' : esc(goal.name) + '에 닿았어요') + '</strong></div><p class="muted" style="margin:0 0 14px">책 한 권을 ' + BOOK_CM + 'cm로 쌓아요</p>' +
     '<div class="grid2"><div class="tower">' + towerSvg(fill, exact) + compareSvg(goal) + '<div class="marks">' + marks + '</div></div><div class="side">' + side + '</div></div>';
+  app.querySelectorAll('[data-rk]').forEach(function (btn) { btn.onclick = function () { openLog(btn.dataset.rk); }; });
 };
 
 /* ---------- 목표에 닿았을 때 축하 (기기마다 한 번) ---------- */
@@ -515,11 +526,8 @@ VIEWS.student = async function () {
     app.querySelectorAll('.name').forEach(function (b) {
       b.onclick = function () {
         var id = b.dataset.id;
-        if (b.dataset.lock === '1') {
-          $('#modal').innerHTML = '<div class="shade"><form class="sheet" id="pwf"><h2>' + esc(b.dataset.name) + '</h2><label class="f" for="pw">비밀번호</label><input class="in" id="pw" type="password" autocomplete="off" inputmode="numeric"><button class="btn wide" type="submit">들어가기</button><button class="btn line wide" type="button" id="pwx">취소</button></form></div>';
-          $('#pw').focus(); $('#pwx').onclick = function () { $('#modal').innerHTML = ''; };
-          $('#pwf').onsubmit = function (ev) { ev.preventDefault(); enter(id, $('#pw').value); };
-        } else enter(id, '');
+        if (b.dataset.lock === '1') askPw({ id: id, name: b.dataset.name, lock: true }, APP.after);
+        else enter(id, '', b.dataset.name);
       };
     });
     return;
@@ -532,7 +540,7 @@ VIEWS.student = async function () {
     return classBookCard(c, '<div>' + st + '</div>');
   }).join('');
   app.innerHTML =
-    '<div class="row" style="justify-content:space-between;margin-bottom:12px"><h1 style="font-size:24px">' + esc(d.student.name) + '의 책탑</h1><button class="btn line small" type="button" id="out">다른 사람으로</button></div>' +
+    '<div class="row" style="justify-content:space-between;margin-bottom:12px"><h1 style="font-size:24px">' + esc(d.student.name) + '의 책탑</h1><div class="row" style="gap:8px"><button class="btn small" type="button" data-go="mine">내 독서기록장</button><button class="btn line small" type="button" id="out">다른 사람으로</button></div></div>' +
     '<div class="grid2"><div class="stack" style="flex:1 1 320px;min-width:0">' +
     '<div class="card dark"><span class="muted">내가 쌓은 책탑</span><div style="font-size:28px;font-weight:900">' + d.approved + '권 · ' + heightText(d.approved, cm) + '</div>' + (d.pending ? '<span class="pill wait" style="color:#3E2C20">승인 대기 ' + d.pending + '권</span>' : '') + '</div>' +
     (cbs ? '<h2 style="font-size:19px">우리 반이 함께 읽는 책</h2>' + cbs : '') +
@@ -603,10 +611,67 @@ VIEWS.student = async function () {
     $('#modal').querySelectorAll('[data-q]').forEach(function (qb) { qb.onclick = back; });
   };
 };
-async function enter(id, pw) {
+/* ---------- 내 독서기록장 (현황판에서 이름을 누르거나, 내 책탑에서 들어옴) ---------- */
+// 점퍼스와 같은 방식: 현황판에서 이름을 누르면 비밀번호를 묻고 본인 기록만 보여 줌
+async function openLog(name) {
+  if (APP.me && APP.me.name === name) { go('mine'); return; }
+  var list = await guard(function () { return rpc('getStudentsPublic'); });
+  if (!list) return;
+  var same = list.filter(function (s) { return s.name === name; });
+  if (same.length !== 1) { APP.me = null; APP.after = 'mine'; go('student'); return; }   // 같은 이름이 둘이면 번호를 보고 고르게
+  askPw(same[0], 'mine');
+}
+function askPw(st, after) {
+  $('#modal').innerHTML = '<div class="shade"><form class="sheet" id="pwf"><h2>' + esc(st.name) + (after === 'mine' ? '의 독서기록장' : '') + '</h2>' +
+    (st.lock ? (after === 'mine' ? '<p class="muted" style="margin:0">본인만 볼 수 있도록 비밀번호로 확인해요.</p>' : '') + '<label class="f" for="pw">비밀번호</label><input class="in" id="pw" type="password" autocomplete="off" inputmode="numeric">'
+      : '<p style="margin:0;background:var(--butter);border-radius:12px;padding:12px 14px">아직 비밀번호가 없어서 누구나 들어갈 수 있어요. 선생님께 비밀번호를 정해 달라고 해 주세요.</p>') +
+    '<button class="btn wide" type="submit">들어가기</button><button class="btn line wide" type="button" id="pwx">취소</button></form></div>';
+  if ($('#pw')) $('#pw').focus();
+  $('#pwx').onclick = function () { $('#modal').innerHTML = ''; };
+  $('#pwf').onsubmit = function (ev) { ev.preventDefault(); enter(st.id, $('#pw') ? $('#pw').value : '', st.name, after); };
+}
+VIEWS.mine = async function () {
+  var app = $('#app');
+  if (!APP.me) { APP.after = 'mine'; go('student'); return; }
+  app.innerHTML = '<p class="muted">기록장을 펴는 중이에요.</p>';
+  var me = APP.me, d = await guard(function () { return rpc('getMyBooks', [me.id, me.pw]); });
+  if (!d) { APP.me = null; go('student'); return; }
+  var list = d.books, filt = 'all';
+  function draw() {
+    var show = list.filter(function (b) { return filt === 'all' || b.status === filt; });
+    $('#logs').innerHTML = show.length ? show.map(function (b) {
+      var p = b.status === 'approved' ? '<span class="pill ok">승인됨</span>' : b.status === 'returned' ? '<span class="pill back">다시 써 오기</span>' : '<span class="pill wait">승인 대기</span>';
+      return '<div class="log">' + coverHtml(b) + '<div style="min-width:0"><div class="row" style="justify-content:space-between;flex-wrap:nowrap;align-items:flex-start;gap:8px"><span><strong style="font-size:17px">' + esc(b.title) + '</strong><br><span class="muted">' + esc([b.author, b.publisher].filter(Boolean).join(' · ')) + '</span></span>' + p + '</div>' +
+        '<span class="muted">' + esc(b.date || '') + '</span>' +
+        (b.note ? '<p class="note">' + esc(b.note) + '</p>' : '<p class="note muted">감상을 적지 않았어요.</p>') +
+        (b.memo ? '<p class="memo">선생님: ' + esc(b.memo) + '</p>' : '') + '</div></div>';
+    }).join('') : '<span class="muted">' + (list.length ? '여기에 해당하는 기록이 없어요.' : '아직 기록이 없어요. "책 기록하기"에서 첫 책을 올려 보세요.') + '</span>';
+    app.querySelectorAll('[data-ft]').forEach(function (x) { x.className = 'btn small' + (x.dataset.ft === filt ? '' : ' line'); });
+  }
+  // 달마다 쌓은 책 (승인된 책, 최근 6달)
+  var months = {}; list.forEach(function (b) { if (b.status === 'approved' && b.date) { var m = b.date.slice(0, 7); months[m] = (months[m] || 0) + 1; } });
+  var mk = Object.keys(months).sort().slice(-6), mmax = Math.max.apply(null, mk.map(function (k) { return months[k]; }).concat([1]));
+  var chart = mk.length ? '<div class="stack" style="gap:6px"><span class="muted">달마다 쌓은 책</span>' + mk.map(function (k, i) {
+    return '<div class="mrow"><span>' + Number(k.slice(5)) + '월</span><div class="bar"><i style="width:' + Math.round(months[k] / mmax * 100) + '%;background:' + BOOKC[i % 6] + '"></i></div><b>' + months[k] + '권</b></div>';
+  }).join('') + '</div>' : '';
+  app.innerHTML =
+    '<div class="row" style="justify-content:space-between;margin-bottom:12px"><h1 style="font-size:24px">' + esc(d.student.name) + '의 독서기록장</h1><div class="row" style="gap:8px"><button class="btn small" type="button" data-go="student">책 기록하기</button><button class="btn line small" type="button" id="out">나가기</button></div></div>' +
+    '<div class="grid2"><div class="stack" style="flex:1 1 260px;min-width:0">' +
+    '<div class="card dark"><span class="muted">내가 쌓은 책탑</span><div style="font-size:28px;font-weight:900">' + d.approved + '권 · ' + heightText(d.approved) + '</div>' + (d.pending ? '<span class="pill wait" style="color:#3E2C20">승인 대기 ' + d.pending + '권</span>' : '') + '</div>' +
+    (chart ? '<div class="card">' + chart + '</div>' : '') + '</div>' +
+    '<div class="card stack" style="flex:2 1 420px;min-width:0"><div class="row" style="justify-content:space-between"><strong style="font-size:17px">내가 쓴 기록 ' + list.length + '개</strong><div class="row" style="gap:6px">' +
+    [['all', '모두'], ['approved', '승인됨'], ['pending', '대기'], ['returned', '다시 쓰기']].map(function (f) { return '<button class="btn small line" type="button" data-ft="' + f[0] + '">' + f[1] + '</button>'; }).join('') +
+    '</div></div><div class="stack" id="logs"></div></div></div>';
+  $('#out').onclick = function () { APP.me = null; go('home'); };
+  app.querySelectorAll('[data-ft]').forEach(function (x) { x.onclick = function () { filt = x.dataset.ft; draw(); }; });
+  draw();
+};
+async function enter(id, pw, name, after) {
   var ok = await guard(function () { return rpc('getMyBooks', [id, pw]); });
   if (!ok) return;
-  APP.me = { id: id, pw: pw }; $('#modal').innerHTML = ''; render();
+  APP.me = { id: id, pw: pw, name: name || (ok.student && ok.student.name) || '' }; $('#modal').innerHTML = '';
+  var to = after || APP.after; APP.after = '';
+  if (to) go(to); else render();
 }
 
 /* ---------- 선생님 메뉴 ---------- */
@@ -765,27 +830,40 @@ var ADMIN_TABS = {
   },
   students: function (el, d) {
     var cnt = {}; d.books.forEach(function (b) { if (b.status === 'approved') cnt[b.sid] = (cnt[b.sid] || 0) + 1; });
-    el.innerHTML = '<p class="muted" style="margin-top:0">등록된 학생 ' + d.students.length + '명</p><div style="overflow:auto">' +
+    var nolock = d.students.filter(function (s) { return !s.lock; });
+    el.innerHTML = '<p class="muted" style="margin-top:0">등록된 학생 ' + d.students.length + '명 · 비밀번호는 독서기록장을 볼 때와 책을 기록할 때 써요</p>' +
+      (nolock.length ? '<div class="item" style="background:var(--butter);margin-bottom:12px"><strong>비밀번호가 없는 학생 ' + nolock.length + '명</strong><p class="muted" style="margin:4px 0 10px">비밀번호가 없으면 친구도 그 학생의 독서기록장을 열어 볼 수 있어요.</p><button class="btn small" type="button" id="all1234">모두 1234로 정하기</button></div>' : '') +
+      '<div style="overflow:auto">' +
       (d.students.length ? '<table class="t"><thead><tr><th>학년</th><th>반</th><th>번호</th><th>이름</th><th>승인된 책</th><th>비밀번호</th><th></th></tr></thead><tbody>' + d.students.map(function (s) {
-        return '<tr data-sid="' + esc(s.id) + '"><td>' + esc(s.grade) + '</td><td>' + esc(s.cls) + '</td><td>' + esc(s.number) + '</td><td>' + esc(s.name) + '</td><td>' + (cnt[s.id] || 0) + '권</td><td><button class="btn line small" type="button" data-pw>' + (s.lock ? '바꾸기' : '정하기') + '</button></td><td><button class="btn line small" type="button" data-rm>지우기</button></td></tr>';
+        return '<tr data-sid="' + esc(s.id) + '"><td>' + esc(s.grade) + '</td><td>' + esc(s.cls) + '</td><td>' + esc(s.number) + '</td><td>' + esc(s.name) + '</td><td>' + (cnt[s.id] || 0) + '권</td><td>' + (s.lock ? '<span class="pill ok">있음</span> ' : '<span class="pill">없음</span> ') + '<button class="btn line small" type="button" data-pw>' + (s.lock ? '바꾸기' : '정하기') + '</button></td><td><button class="btn line small" type="button" data-rm>지우기</button></td></tr>';
       }).join('') + '</tbody></table>' : '<p>아직 등록된 학생이 없어요. <button class="btn small" type="button" id="toreg">학생 등록하러 가기</button></p>') + '</div>';
     if ($('#toreg')) $('#toreg').onclick = function () { ADMIN.tab = 'register'; drawAdmin(); };
+    if ($('#all1234')) $('#all1234').onclick = async function () {
+      if (!confirm(nolock.length + '명의 비밀번호를 1234로 정할까요? 학생마다 나중에 바꿀 수 있어요.')) return;
+      var btn = this; btn.disabled = true;
+      for (var i = 0; i < nolock.length; i++) {
+        btn.textContent = '정하는 중 ' + (i + 1) + '/' + nolock.length;
+        var sid = nolock[i].id, r = await guard(function () { return rpc('updateStudent', [APP.token, sid, { password: '1234' }]); });
+        if (!r) break;
+      }
+      toast('비밀번호를 정했어요.'); render();
+    };
     el.querySelectorAll('[data-sid]').forEach(function (tr) {
       var sid = tr.dataset.sid;
       $('[data-rm]', tr).onclick = function () { if (confirm('이 학생과 학생의 책 기록을 모두 지울까요? 되돌릴 수 없어요.')) act('deleteStudent', [sid], '지웠어요.'); };
       $('[data-pw]', tr).onclick = function () {
-        $('#modal').innerHTML = '<div class="shade"><form class="sheet" id="spw"><h2>학생 비밀번호</h2><label class="f" for="np">새 비밀번호 (비워 두면 비밀번호 없이 들어가요)</label><input class="in" id="np" autocomplete="off" maxlength="20"><button class="btn wide" type="submit">저장</button><button class="btn line wide" type="button" id="spx">취소</button></form></div>';
+        $('#modal').innerHTML = '<div class="shade"><form class="sheet" id="spw"><h2>학생 비밀번호</h2><label class="f" for="np">새 비밀번호 (비워 두면 비밀번호 없이 들어가요 · 잊어버린 학생은 여기서 새로 정해 주세요)</label><input class="in" id="np" autocomplete="off" maxlength="20"><button class="btn wide" type="submit">저장</button><button class="btn line wide" type="button" id="spx">취소</button></form></div>';
         $('#np').focus(); $('#spx').onclick = function () { $('#modal').innerHTML = ''; };
         $('#spw').onsubmit = function (ev) { ev.preventDefault(); act('updateStudent', [sid, { password: $('#np').value }], '저장했어요.'); };
       };
     });
   },
   register: function (el) {
-    el.innerHTML = '<form id="bulk" style="max-width:520px"><label class="f" for="bt" style="margin-top:0">한 줄에 한 명: 학년 반 번호 이름 (엑셀에서 복사해 붙여도 돼요)</label><textarea class="in" id="bt" style="min-height:220px" placeholder="5 1 1 김하늘&#10;5 1 2 이도윤"></textarea><button class="btn" type="submit" style="margin-top:12px">등록하기</button><p class="muted">비밀번호는 등록한 뒤 "학생 관리"에서 학생마다 정할 수 있어요. 정하지 않으면 이름만 눌러 들어갑니다.</p></form>';
+    el.innerHTML = '<form id="bulk" style="max-width:520px"><label class="f" for="bt" style="margin-top:0">한 줄에 한 명: 학년 반 번호 이름 비밀번호 (비밀번호는 빼도 돼요 · 엑셀에서 복사해 붙여도 돼요)</label><textarea class="in" id="bt" style="min-height:220px" placeholder="5 1 1 김하늘 2580&#10;5 1 2 이도윤"></textarea><button class="btn" type="submit" style="margin-top:12px">등록하기</button><p class="muted">비밀번호를 빼면 이름만 눌러 들어가요. 나중에 "학생 관리"에서 정하거나 한꺼번에 1234로 정할 수 있어요.</p></form>';
     $('#bulk').onsubmit = function (ev) {
       ev.preventDefault();
       var rows = $('#bt').value.split(/\n/).map(function (l) { return l.trim().split(/[\t, ]+/); }).filter(function (p) { return p.length >= 4 && p[3]; })
-        .map(function (p) { return { grade: p[0], cls: p[1], number: p[2], name: p.slice(3).join(' ') }; });
+        .map(function (p) { var pw = (p.length >= 5 && /^\d{4,}$/.test(p[p.length - 1])) ? p.pop() : ''; return { grade: p[0], cls: p[1], number: p[2], name: p.slice(3).join(' '), password: pw }; });
       if (!rows.length) { toast('"학년 반 번호 이름" 순서로 적어 주세요.'); return; }
       ADMIN.tab = 'students';
       act('addStudentsBulk', [rows], rows.length + '명을 등록했어요.');

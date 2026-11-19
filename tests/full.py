@@ -160,6 +160,34 @@ try:
         pg.fill('#pw', '4321'); pg.click('#pwf button[type=submit]'); pg.wait_for_selector('#rec')
         ok('맞는 비밀번호로 들어감', '김하늘' in pg.inner_text('#app'))
 
+        # 10-1. 내 독서기록장 (점퍼스처럼 현황판에서 이름을 누르면 비밀번호를 묻고 본인 기록만)
+        pg.click('[data-go=mine]'); pg.wait_for_selector('#logs .log')
+        ok('책 기록 화면에서 내 독서기록장으로', '김하늘의 독서기록장' in pg.inner_text('#app') and '잎싹이 용감했다' in pg.inner_text('#logs'))
+        ok('달마다 쌓은 책 막대', pg.locator('.mrow').count() >= 1)
+        n_all = pg.locator('#logs .log').count(); pg.click('[data-ft=pending]'); pg.wait_for_timeout(100)
+        ok('기록장 거르기 (대기만)', pg.locator('#logs .log').count() < n_all); pg.click('[data-ft=all]')
+        pg.click('#out'); pg.wait_for_selector('h1.headline')
+        pg.click('[data-go=admin]'); pg.wait_for_selector('.menu'); pg.click('[data-tab=board]'); pg.wait_for_selector('#sn'); pg.check('#sn'); pg.wait_for_timeout(500)
+        pg.click('[data-go=home]'); pg.wait_for_selector('[data-rk]')
+        pg.locator('[data-rk="김하늘"]').click(); pg.wait_for_selector('#pw')
+        ok('현황판 이름을 누르면 비밀번호를 물음', '김하늘의 독서기록장' in pg.inner_text('.sheet'))
+        pg.fill('#pw', '0000'); pg.click('#pwf button[type=submit]'); pg.wait_for_timeout(400)
+        ok('틀린 비밀번호로는 기록장이 안 열림', '맞지 않습니다' in toast() and pg.locator('#logs').count() == 0)
+        pg.fill('#pw', '4321'); pg.click('#pwf button[type=submit]'); pg.wait_for_selector('#logs .log')
+        ok('맞는 비밀번호로 기록장이 열림', '김하늘의 독서기록장' in pg.inner_text('#app') and '#mine' in pg.url)
+        pg.click('#out'); pg.wait_for_selector('[data-rk]'); pg.locator('[data-rk="이도윤"]').click(); pg.wait_for_selector('#pwf')
+        ok('비밀번호가 없는 학생은 안내만 하고 들어감', '아직 비밀번호가 없어서' in pg.inner_text('.sheet') and pg.locator('#pw').count() == 0)
+        pg.click('#pwx')
+        pg.click('[data-go=admin]'); pg.wait_for_selector('.menu'); pg.click('[data-tab=students]'); pg.wait_for_selector('#all1234')
+        ok('학생 관리: 비밀번호 없는 학생 수', '비밀번호가 없는 학생 2명' in pg.inner_text('#pane'))
+        pg.click('#all1234'); pg.wait_for_function("!document.querySelector('#all1234')", timeout=15000)
+        ok('없는 학생을 한꺼번에 1234로', pg.locator('table.t .pill.ok').count() == 3)
+        pg.click('[data-tab=board]'); pg.wait_for_selector('#sn'); pg.uncheck('#sn'); pg.wait_for_timeout(500)
+        pg.click('[data-go=home]'); pg.wait_for_selector('h1.headline'); pg.click('[data-go=student]'); pg.wait_for_selector('.name')
+        pg.locator('.name', has_text='이도윤').click(); pg.wait_for_selector('#pw'); pg.fill('#pw', '1234'); pg.click('#pwf button[type=submit]'); pg.wait_for_selector('#rec')
+        pg.click('#out'); pg.wait_for_selector('.name'); pg.locator('.name', has_text='김하늘').click(); pg.wait_for_selector('#pw'); pg.fill('#pw', '4321'); pg.click('#pwf button[type=submit]'); pg.wait_for_selector('#rec')
+        ok('1234로 정한 학생도 그대로 기록 화면에 들어감', '김하늘' in pg.inner_text('#app'))
+
         # 10-2. 선생님 메뉴: 업데이트 내역, 비밀번호 바꾸기, 로그아웃
         pg.click('[data-go=home]'); pg.wait_for_selector('h1.headline'); pg.click('[data-go=admin]'); pg.wait_for_selector('.menu')
         ok('선생님 메뉴는 기록 승인부터', pg.locator('.mi[aria-current=page]').inner_text().startswith('기록 승인'))
@@ -208,7 +236,7 @@ try:
         ok('책 기록 초기화 (학생·학급 도서는 남음)', len(state()['Books']) == 1 and len(state()['Students']) == 4 and len(state()['ClassBooks']) == 2)
         # 10-4. 목표 축하: 23권(46cm)이 되면 의자(45cm)
         sid2 = state()['Students'][2][0]
-        rids = [call('addBook', sid2, '', {'title': f'책 {i}', 'note': '가'})['result']['rid'] for i in range(23)]
+        rids = [call('addBook', sid2, '1234', {'title': f'책 {i}', 'note': '가'})['result']['rid'] for i in range(23)]
         pg.click('[data-go=home]'); pg.wait_for_selector('h1.headline'); pg.wait_for_timeout(800)
         ok('승인 전에는 축하가 뜨지 않음', pg.locator('#celt').count() == 0)
         call('approveBooks', tok, rids); pg.reload(); pg.wait_for_selector('#celt')

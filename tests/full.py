@@ -160,6 +160,10 @@ try:
         pg.fill('#pw', '4321'); pg.click('#pwf button[type=submit]'); pg.wait_for_selector('#rec')
         ok('맞는 비밀번호로 들어감', '김하늘' in pg.inner_text('#app'))
 
+        # 10-0. 사용 안내 (어느 화면에서나)
+        pg.locator('[data-help]').first.click(); pg.wait_for_selector('.sheet.help')
+        ok('사용 안내 창 (항목 9개)', pg.locator('.sheet.help section').count() == 9 and '리더스 간략 사용법' in pg.inner_text('.sheet.help'))
+        pg.keyboard.press('Escape'); ok('사용 안내 닫기 (Esc)', pg.locator('.sheet.help').count() == 0)
         # 10-1. 내 독서기록장 (점퍼스처럼 현황판에서 이름을 누르면 비밀번호를 묻고 본인 기록만)
         pg.click('[data-go=mine]'); pg.wait_for_selector('#logs .log')
         ok('책 기록 화면에서 내 독서기록장으로', '김하늘의 독서기록장' in pg.inner_text('#app') and '잎싹이 용감했다' in pg.inner_text('#logs'))
@@ -200,6 +204,7 @@ try:
         ok('비밀번호를 바꾸면 옛 비밀번호는 막힘', pg.locator('.menu').count() == 0)
         pg.fill('#apw', 'abcd'); pg.click('#lg button[type=submit]'); pg.wait_for_selector('.menu')
         ok('새 비밀번호로 로그인', pg.locator('.mi').count() == 9)
+        ok('선생님 메뉴 맨 아래에도 사용 안내', pg.locator('.menu [data-help]').count() == 1)
         pg.click('[data-go=home]'); pg.wait_for_selector('h1.headline'); pg.click('[data-go=student]'); pg.wait_for_selector('#rec')
 
         # 10-3. 껍데기 2판 기능: 학급 이름, 승인 전 기록 지우기, 기록 고치기, 저장칸, 초기화

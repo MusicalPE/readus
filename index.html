@@ -113,6 +113,8 @@ img.cover{object-fit:cover;padding:0;border-left:0;display:block}
 .helpbtn{display:inline-flex;align-items:center;gap:6px;min-height:44px;border:0;background:none;padding:0 6px;font:inherit;font-size:14px;font-weight:700;color:var(--ink);cursor:pointer;border-radius:8px}
 .helpbtn .qm{width:20px;height:20px;border-radius:50%;background:var(--ink);color:var(--card);font-size:13px;font-weight:900;display:inline-flex;align-items:center;justify-content:center}
 .helpbtn:hover{text-decoration:underline}.helpbtn:focus-visible{outline:3px solid var(--mustard);outline-offset:1px}
+#nav .helpbtn.end{margin-left:8px}
+@media (max-width:640px){#nav{width:100%}#nav .helpbtn.end{margin-left:auto}}
 .menu .helpbtn{margin-top:10px;padding:8px 14px;justify-content:flex-start}
 .sheet.help{max-width:620px}
 .sheet.help section{border-top:1px solid var(--line);padding-top:10px}
@@ -282,8 +284,8 @@ function render() {
   $('#modal').innerHTML = '';
   var nav = $('#nav');
   nav.innerHTML = v === 'home'
-    ? helpBtn() + '<button class="btn line" type="button" id="qr">접속 QR</button><button class="btn" type="button" data-go="student">책 기록하기</button><button class="btn line" type="button" data-go="admin">선생님</button>'
-    : (v === 'admin' && APP.token) ? '' : helpBtn() + '<button class="btn line" type="button" data-go="home">현황판</button>';
+    ? '<button class="btn line" type="button" id="qr">접속 QR</button><button class="btn" type="button" data-go="student">책 기록하기</button><button class="btn line" type="button" data-go="admin">선생님</button>' + helpBtn('end')
+    : (v === 'admin' && APP.token) ? '' : '<button class="btn line" type="button" data-go="home">현황판</button>' + helpBtn('end');
   if ($('#qr')) $('#qr').onclick = showQr;
   VIEWS[v]();
 }

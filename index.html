@@ -203,7 +203,7 @@ table.t td,table.t th{padding:8px 6px;border-bottom:1px solid var(--line);text-a
 var TEMPLATE_URL = 'https://docs.google.com/spreadsheets/d/1i-lr4aewTmhj4eJ-hfXgjxaPzflmMyLMn-aqUepZjls/copy';   // 껍데기가 들어 있는 견본 시트 (사본 만들기)
 // 주소에 ?demo 가 붙으면 설치 없이 둘러보는 미리보기 — 지어낸 학급을 이 브라우저 안에서만 돌림 (demo.js)
 var DEMO = new URLSearchParams(location.search).has('demo');
-var APP = { version: '1.2.0', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
+var APP = { version: '1.2.1', requiredShell: 1, latestShell: 2, s: '', ping: null, settings: null, relay: '', token: '', me: null };
 
 /* ---------- 작은 도구 ---------- */
 function $(sel, root) { return (root || document).querySelector(sel); }
@@ -360,12 +360,16 @@ function goalsFor(grade) {
     { cm: 600, name: '학교 2층', kind: 'bld', floors: 2, img: 'school2' }, { cm: 1200, name: '학교 4층', kind: 'bld', floors: 4, img: 'school4' },
     { cm: 3000, name: '아파트 10층', kind: 'bld', floors: 10, img: 'apt10' }, { cm: 7500, name: '아파트 25층', kind: 'bld', floors: 25, img: 'apt25' },
     { cm: 24900, name: '63빌딩', kind: 'sky', img: 'b63' }, { cm: 55500, name: '롯데월드타워', kind: 'sky', img: 'lotte' },
-    { cm: 194700, name: '한라산', kind: 'mt' }, { cm: 884900, name: '에베레스트', kind: 'mt' }, { cm: 10000000, name: '우주', kind: 'space' }
+    { cm: 194700, name: '한라산', kind: 'mt', img: 'halla', crop: 1 }, { cm: 884900, name: '에베레스트', kind: 'mt', img: 'everest', crop: 1 }, { cm: 10000000, name: '우주', kind: 'space', img: 'space', crop: 1 }
   ];
 }
 // 비교 그림(img/cmp/이름.webp) — 높이 500 으로 놓았을 때의 너비. 그림이 없는 목표(산·우주)는 아래에서 직접 그림
-var CMP_W = { lotte: 180, b63: 179, apt25: 130, apt10: 197, school4: 246, school2: 361, room: 152, door: 239, kid: 146, desk: 412, chair: 272 };
+var CMP_W = { lotte: 180, b63: 179, apt25: 130, apt10: 197, school4: 246, school2: 361, room: 152, door: 239, kid: 146, desk: 412, chair: 272, halla: 2182, everest: 964, space: 334 };
 function compareSvg(g) {
+  if (g.img && CMP_W[g.img] && g.crop) {   // 산·하늘처럼 아주 넓은 그림: 칸 너비에 맞춰 가운데를 보여 줌 (산은 옆으로 조금 좁혀 모양이 보이게)
+    var cw = 376, dw = Math.max(cw, Math.min(CMP_W[g.img], cw * 2)), dx = (cw - dw) / 2;
+    return '<svg class="cmp" width="' + cw + '" height="500" viewBox="0 0 ' + cw + ' 500" role="img" aria-label="비교 대상: ' + esc(g.name) + '" style="margin-left:-226px"><defs><linearGradient id="cmpf"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".16" stop-color="#fff"/><stop offset=".84" stop-color="#fff"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient><mask id="cmpm"><rect width="' + cw + '" height="500" fill="url(#cmpf)"/></mask></defs><image mask="url(#cmpm)" href="img/cmp/' + g.img + '.webp" x="' + dx + '" width="' + dw + '" height="500" preserveAspectRatio="' + (g.kind === 'space' ? 'xMidYMid slice' : 'none') + '"/></svg>';
+  }
   if (g.img && CMP_W[g.img]) {   // 넓은 그림은 책탑 뒤로 겹쳐 놓음 (책을 그 앞에 쌓은 모습)
     var iw = Math.min(CMP_W[g.img], 376), ov = Math.max(0, iw - 150);
     return '<svg class="cmp" width="' + iw + '" height="500" viewBox="0 0 ' + iw + ' 500" role="img" aria-label="비교 대상: ' + esc(g.name) + '"' + (ov ? ' style="margin-left:-' + ov + 'px"' : '') + '><image href="img/cmp/' + g.img + '.webp" width="' + iw + '" height="500" preserveAspectRatio="none"/></svg>';
